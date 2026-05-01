@@ -1,45 +1,69 @@
-# SpeakSpace - Real-Time GD & Interview Skill Builder
+# SpeakSpace – Real-Time GD & Interview Skill Builder
 
-SpeakSpace is a production-grade MERN stack application designed to help users practice and enhance their communication skills through real-time group discussions (GD) and AI-driven feedback.
+SpeakSpace is a scalable, real-time platform where users can practice group discussions (GD) and interview communication skills using voice-based interaction, AI moderation, and performance analytics.
 
-## 🚀 Features
+## 🚀 Architecture
 
-- **Real-Time Audio Rooms:** Low-latency peer-to-peer audio communication using WebRTC.
-- **AI Moderation:** Mock AI service for sentiment analysis, fluency scoring, and topic generation.
-- **Turn-Based System:** Structured speaking turns with "Raise Hand" and queue management.
-- **Premium UI/UX:** Custom-designed dark-mode interface with glassmorphism and micro-interactions.
-- **Performance Analytics:** Track speaking time, confidence scores, and improvement trends.
-- **Role-Based Access:** Support for Students, Moderators, and Admins.
+The application is built using the MERN stack with WebSockets and WebRTC:
+- **Frontend:** React + Vite + Tailwind CSS
+- **Backend:** Node.js + Express
+- **Real-Time:** Socket.io + WebRTC
+- **Database:** MongoDB (Mongoose)
+- **AI Processing:** OpenAI API (GPT for analysis)
 
-## 🛠️ Tech Stack
+## 📁 Repository Structure
 
-- **Frontend:** React (Vite), Tailwind CSS, Zustand, Framer Motion, Socket.io-client.
-- **Backend:** Node.js, Express.js, Socket.io, Mongoose (MongoDB).
-- **Security:** JWT Authentication, Helmet, Rate Limiting, Bcrypt hashing.
-- **DevOps:** Docker, Docker Compose, Nginx.
+- `/` - Backend Node.js codebase
+- `/frontend` - React Frontend application
+- `/sample_data` - Mock user test data
 
-## 📦 Setup & Installation
+## ⚙️ Setup Instructions
 
 ### Prerequisites
-- Docker & Docker Compose installed on your machine.
+- Node.js (v18+)
+- MongoDB running locally or MongoDB Atlas connection string
+- OpenAI API Key
 
-### Running the Application
-1. Clone the repository.
-2. Navigate to the root directory.
-3. Run the following command:
+### Backend Setup
+
+1. Open the root folder (`Project AWt`) in your terminal.
+2. Install dependencies:
    ```bash
-   docker-compose up --build
+   npm install
    ```
-4. Access the application at `http://localhost`.
+3. Create a `.env` file in the root based on `.env.example`:
+   ```env
+   PORT=4000
+   MONGO_URI=mongodb://localhost:27017/speakspace
+   JWT_SECRET=your_jwt_secret_here
+   OPENAI_API_KEY=your_openai_api_key_here
+   ```
+4. Start the backend server:
+   ```bash
+   npm run dev
+   ```
 
-### Environment Variables
-The application comes with default `.env` configurations for local development. For production, update `backend/.env` with your secure credentials.
+### Frontend Setup
 
-## 📂 Project Structure
+1. Open a new terminal and navigate to the frontend folder:
+   ```bash
+   cd frontend
+   ```
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+3. Start the Vite development server:
+   ```bash
+   npm run dev
+   ```
 
-- `frontend/`: React application with Vite.
-- `backend/`: Node.js Express server and Socket.io handlers.
-- `nginx/`: Nginx configuration for serving the frontend and proxying requests.
+## 🧩 Key Features Implemented
 
-## 📄 License
-This project is built based on the SpeakSpace SRS for demonstration purposes.
+- **Backend:** JWT Authentication, MongoDB Schemas (User, Room, Session, Message, Analytics), and complete API routes.
+- **WebSockets:** Room management, real-time chat, AI feedback relay, and WebRTC signaling.
+- **AI Moderator:** OpenAI integration for topic generation and speech feedback (in `src/services/aiService.js`).
+- **Frontend UI:** Modern responsive dashboard, room creation/joining interface, and a placeholder active voice room UI built with Tailwind CSS.
+
+## 📝 License
+MIT

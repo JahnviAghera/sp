@@ -1,40 +1,30 @@
-
 services:
   mongodb:
     image: mongo:latest
-    container_name: speakspace-db
     ports:
       - "27017:27017"
     volumes:
-      - mongodb_data:/data/db
-    networks:
-      - speakspace-network
+      - mongo-data:/data/db
 
   backend:
-    build: ./backend
-    container_name: speakspace-backend
+    build: .
     ports:
-      - "5000:5000"
-    env_file:
-      - ./backend/.env
+      - "4000:4000"
+    environment:
+      - MONGO_URI=mongodb://mongodb:27017/speakspace
+      - JWT_SECRET=your_jwt_secret
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
     depends_on:
       - mongodb
-    networks:
-      - speakspace-network
 
   frontend:
     build: ./frontend
-    container_name: speakspace-frontend
     ports:
-      - "80:80"
+      - "5173:5173"
+    environment:
+      - VITE_API_URL=http://localhost:4000/api
     depends_on:
       - backend
-    networks:
-      - speakspace-network
-
-networks:
-  speakspace-network:
-    driver: bridge
 
 volumes:
-  mongodb_data:
+  mongo-data:

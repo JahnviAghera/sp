@@ -1,81 +1,44 @@
-import React, { Suspense, lazy } from 'react';
+import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import AppLayout from './components/layout/AppLayout';
-import ProtectedRoute from './components/layout/ProtectedRoute';
-import Spinner from './components/ui/Spinner';
-
-// Lazy loaded pages
-const LandingPage = lazy(() => import('./pages/LandingPage'));
-const LoginPage = lazy(() => import('./pages/LoginPage'));
-const RegisterPage = lazy(() => import('./pages/RegisterPage'));
-const Dashboard = lazy(() => import('./pages/Dashboard'));
-const RoomPage = lazy(() => import('./pages/RoomPage'));
-const ProfilePage = lazy(() => import('./pages/ProfilePage'));
-const AnalyticsPage = lazy(() => import('./pages/AnalyticsPage'));
-const LeaderboardPage = lazy(() => import('./pages/LeaderboardPage'));
-const AdminPage = lazy(() => import('./pages/AdminPage'));
+import Login from './pages/Login';
+import Dashboard from './pages/Dashboard';
+import Room from './pages/Room';
+import Leaderboard from './pages/Leaderboard';
+import Schedules from './pages/Schedules';
+import AdminPanel from './pages/AdminPanel';
+import Profile from './pages/Profile';
 
 function App() {
-  // Temporary mock user for UI testing
-  const mockUser = { name: 'Test User', avatar: '' };
-
   return (
     <Router>
-      <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-dark-900"><Spinner size="xl" /></div>}>
-        <Routes>
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
-          
-          <Route path="/dashboard" element={
-            <ProtectedRoute isAuthenticated={true}>
-              <AppLayout user={mockUser}>
-                <Dashboard />
-              </AppLayout>
-            </ProtectedRoute>
-          } />
-          
-          <Route path="/room/:id" element={
-            <ProtectedRoute isAuthenticated={true}>
-              <AppLayout user={mockUser}>
-                <RoomPage />
-              </AppLayout>
-            </ProtectedRoute>
-          } />
-          
-          <Route path="/profile" element={
-            <ProtectedRoute isAuthenticated={true}>
-              <AppLayout user={mockUser}>
-                <ProfilePage />
-              </AppLayout>
-            </ProtectedRoute>
-          } />
-          
-          <Route path="/analytics" element={
-            <ProtectedRoute isAuthenticated={true}>
-              <AppLayout user={mockUser}>
-                <AnalyticsPage />
-              </AppLayout>
-            </ProtectedRoute>
-          } />
-          
-          <Route path="/leaderboard" element={
-            <ProtectedRoute isAuthenticated={true}>
-              <AppLayout user={mockUser}>
-                <LeaderboardPage />
-              </AppLayout>
-            </ProtectedRoute>
-          } />
-          
-          <Route path="/admin" element={
-            <ProtectedRoute isAuthenticated={true}>
-              <AppLayout user={mockUser}>
-                <AdminPage />
-              </AppLayout>
-            </ProtectedRoute>
-          } />
-        </Routes>
-      </Suspense>
+      <div className="min-h-screen bg-dark-900 text-gray-100 flex flex-col">
+        <header className="px-6 py-4 border-b border-dark-800 flex justify-between items-center bg-dark-900/50 backdrop-blur-md sticky top-0 z-50">
+          <div className="flex items-center space-x-8">
+            <h1 className="text-2xl font-black text-brand-500 tracking-tighter">SpeakSpace</h1>
+            <nav className="hidden md:flex space-x-6 text-sm font-medium">
+              <a href="/dashboard" className="text-gray-400 hover:text-white transition-colors">Dashboard</a>
+              <a href="/leaderboard" className="text-gray-400 hover:text-white transition-colors">Leaderboard</a>
+              <a href="/schedules" className="text-gray-400 hover:text-white transition-colors">Schedules</a>
+              <a href="/admin" className="text-gray-400 hover:text-white transition-colors">Admin</a>
+              <a href="/profile" className="text-gray-400 hover:text-white transition-colors">Profile</a>
+            </nav>
+          </div>
+          <div className="flex items-center space-x-4">
+             <div className="w-8 h-8 bg-dark-700 rounded-full border border-dark-600"></div>
+          </div>
+        </header>
+        <main className="flex-grow flex flex-col p-6">
+          <Routes>
+            <Route path="/" element={<Login />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/room/:code" element={<Room />} />
+            <Route path="/leaderboard" element={<Leaderboard />} />
+            <Route path="/schedules" element={<Schedules />} />
+            <Route path="/admin" element={<AdminPanel />} />
+            <Route path="/profile" element={<Profile />} />
+          </Routes>
+        </main>
+      </div>
     </Router>
   );
 }
