@@ -3,16 +3,19 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Mic, MicOff, PhoneOff, MessageSquare, Hand, Sparkles } from 'lucide-react';
 import { useSocket } from '../hooks/useSocket';
 import { useWebRTC } from '../hooks/useWebRTC';
+import useAuthStore from '../store/authStore';
 
 export default function Room() {
   const { code } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuthStore();
   
-  // Mock user for now - in real app, get from Auth context
-  const [user] = useState({ id: Math.random().toString(36).substr(2, 9), name: 'User_' + Math.floor(Math.random()*100) });
+  // Provide a temporary user if not logged in (though they should be)
+  const effectiveUser = user || { id: 'anon-' + Math.random().toString(36).substr(2, 5), name: 'Anonymous' };
   
-  const socket = useSocket(code, user);
+  const socket = useSocket(code, effectiveUser);
   const { peers, localStream } = useWebRTC(socket, code);
+
   
   const [isMuted, setIsMuted] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);

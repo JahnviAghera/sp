@@ -1,20 +1,19 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Users, Plus, Hash } from 'lucide-react';
-import axios from 'axios';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
+import { roomAPI } from '../services/api';
+import useAuthStore from '../store/authStore';
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const [roomCode, setRoomCode] = useState('');
   const [loading, setLoading] = useState(false);
+  const { user } = useAuthStore();
 
   const handleCreateRoom = async () => {
     try {
       setLoading(true);
-      // In a real app, you'd pass the auth token in headers
-      const response = await axios.post(`${API_URL}/rooms/create`, {
+      const response = await roomAPI.createRoom({
         title: 'New GD Session',
         isPrivate: false,
         aiModerator: true
@@ -22,7 +21,7 @@ export default function Dashboard() {
       navigate(`/room/${response.data.room.code}`);
     } catch (err) {
       console.error('Failed to create room', err);
-      // Fallback for demo if backend isn't ready/auth isn't configured
+      // Fallback for demo if backend isn't ready
       const mockCode = Math.random().toString(36).substring(2, 8).toUpperCase();
       navigate(`/room/${mockCode}`);
     } finally {
@@ -38,8 +37,16 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto w-full mt-10 p-6">
-      <h2 className="text-4xl font-black mb-10 tracking-tight">Dashboard</h2>
+    <div className="max-w-4xl mx-auto w-full mt-10 p-6 text-white">
+      <div className="flex justify-between items-center mb-10">
+        <h2 className="text-4xl font-black tracking-tight">Dashboard</h2>
+        {user && (
+          <div className="text-right">
+            <p className="text-sm text-gray-400">Welcome back,</p>
+            <p className="font-bold text-brand-500">{user.name}</p>
+          </div>
+        )}
+      </div>
       
       <div className="grid md:grid-cols-2 gap-8">
         <div className="bg-dark-800 p-8 rounded-3xl border border-dark-700 shadow-2xl hover:border-brand-500/50 transition-all group">
@@ -80,7 +87,7 @@ export default function Dashboard() {
             <input 
               type="text" 
               placeholder="ENTER CODE" 
-              className="input-field uppercase py-4 text-center text-xl font-mono tracking-widest bg-dark-900 border-2 border-dark-700 focus:border-brand-500 transition-all"
+              className="input-field uppercase py-4 text-center text-xl font-mono tracking-widest bg-dark-900 border-2 border-dark-700 focus:border-brand-500 transition-all w-full"
               value={roomCode}
               onChange={(e) => setRoomCode(e.target.value)}
               required
@@ -94,3 +101,4 @@ export default function Dashboard() {
     </div>
   );
 }
+

@@ -1,33 +1,34 @@
 import React, { useState, useEffect } from 'react';
 import { User, Mail, Award, BookOpen, Clock, Activity, Edit2, Save, ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
+import { authAPI } from '../services/api';
+import useAuthStore from '../store/authStore';
 
 export default function Profile() {
   const navigate = useNavigate();
+  const { user: storeUser, fetchProfile: updateStoreProfile } = useAuthStore();
   const [profile, setProfile] = useState(null);
   const [editing, setEditing] = useState(false);
   const [formData, setFormData] = useState({ name: '', bio: '', skills: '' });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchProfile = async () => {
+    const fetchProfileData = async () => {
       try {
-        const response = await axios.get(`${API_URL}/auth/profile`);
-        setProfile(response.data.user);
+        const response = await authAPI.getProfile();
+        const userData = response.data.user;
+        setProfile(userData);
         setFormData({
-          name: response.data.user.name,
-          bio: response.data.user.bio || '',
-          skills: (response.data.user.skills || []).join(', ')
+          name: userData.name,
+          bio: userData.bio || '',
+          skills: (userData.skills || []).join(', ')
         });
       } catch (err) {
         console.error('Failed to fetch profile', err);
-        // Mock data
+        // Mock data fallback
         setProfile({
-          name: 'Demo User',
-          email: 'demo@example.com',
+          name: storeUser?.name || 'Demo User',
+          email: storeUser?.email || 'demo@example.com',
           bio: 'Passionate about communication and AI.',
           skills: ['Public Speaking', 'Technical Writing'],
           stats: { totalSpeakingTime: 1240, sessionsParticipated: 5 }
@@ -36,8 +37,8 @@ export default function Profile() {
         setLoading(false);
       }
     };
-    fetchProfile();
-  }, []);
+    fetchProfileData();
+  }, [storeUser]);
 
   const handleSave = async () => {
     try {
@@ -45,7 +46,8 @@ export default function Profile() {
         ...formData,
         skills: formData.skills.split(',').map(s => s.trim()).filter(s => s)
       };
-      await axios.put(`${API_URL}/auth/profile`, updated);
+      await authAPI.updateProfile(updated);
+      await updateStoreProfile(); // Update global state
       setProfile({ ...profile, ...updated });
       setEditing(false);
     } catch (err) {
@@ -57,7 +59,7 @@ export default function Profile() {
   if (loading) return <div className="p-20 text-center text-gray-500">Loading profile...</div>;
 
   return (
-    <div className="max-w-4xl mx-auto w-full mt-10 p-6">
+    <div className="max-w-4xl mx-auto w-full mt-10 p-6 text-white">
       <button 
         onClick={() => navigate('/dashboard')}
         className="flex items-center text-gray-400 hover:text-white transition-colors mb-6 group"
@@ -72,7 +74,7 @@ export default function Profile() {
           <div className="bg-dark-800 p-8 rounded-3xl border border-dark-700 text-center relative overflow-hidden group">
             <div className="absolute inset-0 bg-brand-500/5 opacity-0 group-hover:opacity-100 transition-opacity" />
             <div className="w-24 h-24 bg-brand-500/20 rounded-full flex items-center justify-center text-3xl font-black text-brand-500 mx-auto mb-4 border-2 border-brand-500/30 relative">
-              {profile.name.charAt(0)}
+              {profile.name?.charAt(0) || 'U'}
               <button className="absolute bottom-0 right-0 p-1.5 bg-dark-700 rounded-full border border-dark-600 hover:bg-dark-600 transition-colors">
                 <Edit2 size={12} className="text-gray-300" />
               </button>
@@ -109,7 +111,7 @@ export default function Profile() {
                 <div>
                   <label className="text-[10px] font-bold text-gray-500 uppercase">Name</label>
                   <input 
-                    className="input-field mt-1" 
+                    className="input-field mt-1 w-full" 
                     value={formData.name} 
                     onChange={e => setFormData({...formData, name: e.target.value})} 
                   />
@@ -117,7 +119,7 @@ export default function Profile() {
                 <div>
                   <label className="text-[10px] font-bold text-gray-500 uppercase">Bio</label>
                   <textarea 
-                    className="input-field mt-1 h-24 pt-2" 
+                    className="input-field mt-1 h-24 pt-2 w-full" 
                     value={formData.bio} 
                     onChange={e => setFormData({...formData, bio: e.target.value})} 
                   />
@@ -125,7 +127,7 @@ export default function Profile() {
                 <div>
                   <label className="text-[10px] font-bold text-gray-500 uppercase">Skills (comma separated)</label>
                   <input 
-                    className="input-field mt-1" 
+                    className="input-field mt-1 w-full" 
                     value={formData.skills} 
                     onChange={e => setFormData({...formData, skills: e.target.value})} 
                   />
@@ -190,3 +192,4 @@ function HistoryItem({ title, date, score }) {
     </div>
   );
 }
+
