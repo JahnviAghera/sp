@@ -1,5 +1,5 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Link, useNavigate } from 'react-router-dom';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Room from './pages/Room';
@@ -7,24 +7,44 @@ import Leaderboard from './pages/Leaderboard';
 import Schedules from './pages/Schedules';
 import AdminPanel from './pages/AdminPanel';
 import Profile from './pages/Profile';
+import useAuthStore from './store/authStore';
 
 function App() {
+  const { user, token, fetchProfile, logout } = useAuthStore();
+
+  useEffect(() => {
+    if (token && !user) {
+      fetchProfile();
+    }
+  }, [token, user, fetchProfile]);
+
   return (
     <Router>
       <div className="min-h-screen bg-dark-900 text-gray-100 flex flex-col">
         <header className="px-6 py-4 border-b border-dark-800 flex justify-between items-center bg-dark-900/50 backdrop-blur-md sticky top-0 z-50">
           <div className="flex items-center space-x-8">
-            <h1 className="text-2xl font-black text-brand-500 tracking-tighter">SpeakSpace</h1>
+            <Link to="/dashboard">
+              <h1 className="text-2xl font-black text-brand-500 tracking-tighter">SpeakSpace</h1>
+            </Link>
             <nav className="hidden md:flex space-x-6 text-sm font-medium">
-              <a href="/dashboard" className="text-gray-400 hover:text-white transition-colors">Dashboard</a>
-              <a href="/leaderboard" className="text-gray-400 hover:text-white transition-colors">Leaderboard</a>
-              <a href="/schedules" className="text-gray-400 hover:text-white transition-colors">Schedules</a>
-              <a href="/admin" className="text-gray-400 hover:text-white transition-colors">Admin</a>
-              <a href="/profile" className="text-gray-400 hover:text-white transition-colors">Profile</a>
+              <Link to="/dashboard" className="text-gray-400 hover:text-white transition-colors">Dashboard</Link>
+              <Link to="/leaderboard" className="text-gray-400 hover:text-white transition-colors">Leaderboard</Link>
+              <Link to="/schedules" className="text-gray-400 hover:text-white transition-colors">Schedules</Link>
+              <Link to="/admin" className="text-gray-400 hover:text-white transition-colors">Admin</Link>
+              <Link to="/profile" className="text-gray-400 hover:text-white transition-colors">Profile</Link>
             </nav>
           </div>
           <div className="flex items-center space-x-4">
-             <div className="w-8 h-8 bg-dark-700 rounded-full border border-dark-600"></div>
+             {user ? (
+               <div className="flex items-center space-x-3">
+                 <Link to="/profile" className="w-8 h-8 bg-brand-500/20 rounded-full border border-brand-500/30 flex items-center justify-center text-xs font-bold text-brand-500">
+                   {user.name?.charAt(0)}
+                 </Link>
+                 <button onClick={logout} className="text-xs text-gray-500 hover:text-red-500 transition-colors">Logout</button>
+               </div>
+             ) : (
+               <Link to="/" className="text-sm font-bold text-brand-500">Login</Link>
+             )}
           </div>
         </header>
         <main className="flex-grow flex flex-col p-6">
@@ -44,3 +64,4 @@ function App() {
 }
 
 export default App;
+
