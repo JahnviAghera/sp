@@ -1,0 +1,40 @@
+
+services:
+  mongodb:
+    image: mongo:latest
+    container_name: speakspace-db
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - speakspace-network
+
+  backend:
+    build: ./backend
+    container_name: speakspace-backend
+    ports:
+      - "5000:5000"
+    env_file:
+      - ./backend/.env
+    depends_on:
+      - mongodb
+    networks:
+      - speakspace-network
+
+  frontend:
+    build: ./frontend
+    container_name: speakspace-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - speakspace-network
+
+networks:
+  speakspace-network:
+    driver: bridge
+
+volumes:
+  mongodb_data:

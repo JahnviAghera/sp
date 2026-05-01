@@ -1,0 +1,444 @@
+Software Requirements Specification (SRS)
+Project: SpeakSpace – Real-Time GD & Interview Skill Builder 
+ 
+Contents
+1.	Introduction	3
+1.1.	Purpose	3
+1.2.	Scope	4
+1.3.	Definitions & Acronyms	4
+1.4.	Overview	4
+2.	Overall	5
+2.1.	Product Perspective	5
+2.2.	User Classes	5
+2.3.	User Characteristics	6
+2.4.	Assumptions & Dependencies	6
+3.	System Features	7
+3.1.	User Registration & Login	7
+3.2.	Profile Management	8
+3.3.	Create/Join GD Rooms	8
+3.4.	Voice Rooms (Real-Time Audio)	8
+3.5.	Turn-Based Speaking System	9
+3.6.	AI Moderator	9
+3.7.	Human Moderator Controls	10
+3.8.	Chat System	10
+3.9.	Room Scheduling	10
+3.10.	Notifications	10
+3.11.	Performance Analytics Dashboard	11
+3.12.	Leaderboard / Scoring System	11
+3.13.	Session Recording	11
+3.14.	Admin Panel	12
+4.	External Interface Requirements	12
+4.1.	User Interface	12
+4.2.	Hardware Interfaces	12
+4.4.	Communication Interfaces	13
+5.	Non-Functional Requirements	13
+5.1.	Performance	13
+5.2.	Scalability	14
+5.3.	Security	14
+5.4.	Availability	14
+5.5.	Usability	15
+5.6.	Reliability	15
+6.	Database Design (MongoDB)	15
+7.	System Architecture	15
+7.1.	High-Level Architecture	16
+7.2.	Real-Time Communication Flow	16
+7.3.	AI Processing Pipeline	16
+8.	Data Flow Diagrams (DFD)	17
+8.1.	Level 0 DFD (Context Diagram)	17
+8.2.	Level 1 DFD	18
+8.3.	Level 2 DFD (AI Feedback Flow)	19
+9.	API Design	20
+9.1.	Authentication APIs	20
+9.2.	Room APIs	20
+9.3.	User APIs	20
+9.4.	Analytics APIs	20
+9.5.	WebSocket Events	20
+UC-1: Join GD Room	21
+UC-2: AI Moderation	21
+UC-3: Speaking Turn Management	22
+11.	Sequence Flows	22
+11.1.	Joining a Room	22
+11.2.	AI Moderation Flow	22
+11.3.	Speaking Turn Flow	22
+12.	Constraints	23
+12.1.	Technical Constraints	23
+12.2.	Legal and Privacy Constraints	23
+Planned Enhancements	23
+
+ 
+1.	Introduction
+1.1.	Purpose
+The purpose of the SpeakSpace platform is to provide a robust, scalable, and interactive web-based environment that enables users to practice and enhance their communication skills, particularly in the context of group discussions (GD) and interviews. The system is designed to simulate real-world discussion scenarios through real-time, voice-based interaction, allowing users to engage in structured conversations with peers. A key objective of the platform is to integrate both AI-driven and human moderation to guide discussions, enforce discipline in speaking turns, and provide meaningful, data-driven feedback. By leveraging artificial intelligence, the system aims to analyze user behavior, communication patterns, and sentiment, thereby offering personalized insights that help users improve clarity, confidence, and articulation. Overall, SpeakSpace seeks to bridge the gap between theoretical preparation and practical communication experience by offering a dynamic and feedback-oriented learning environment.
+
+1.2.	Scope
+SpeakSpace encompasses a wide range of functionalities centered around real-time communication, intelligent moderation, and performance evaluation. The platform enables users to join or create live voice-based discussion rooms where multiple participants can engage in structured conversations. It incorporates AI-powered moderation features that can generate discussion topics, monitor interactions, analyze sentiment, and provide both real-time and post-session feedback. Additionally, the system supports structured speaking mechanisms such as turn-based participation, ensuring fair and organized discussions. Beyond real-time interaction, SpeakSpace also provides performance tracking and analytics, allowing users to review their progress over time through detailed insights such as speaking time distribution, sentiment trends, and improvement suggestions. The platform is designed to foster a community-driven learning environment where users can continuously practice, receive feedback, and improve collaboratively. The primary target users include students preparing for academic or placement-related group discussions, job seekers aiming to improve interview communication skills, and professionals seeking to refine their interpersonal and presentation abilities.
+
+1.3.	Definitions & Acronyms
+In the context of this document, several technical terms and acronyms are used to describe system components and functionalities. A Group Discussion (GD) refers to a structured conversation among multiple participants on a given topic, often used in academic and recruitment processes. Real-Time Communication (RTC) denotes technologies that enable instantaneous exchange of audio, video, or data between users over the internet. An AI Moderator refers to an automated system powered by artificial intelligence that manages discussions, generates topics, analyzes user interactions, and provides feedback. WebRTC (Web Real-Time Communication) is a technology that facilitates peer-to-peer audio streaming directly within web browsers without requiring additional plugins. JSON Web Token (JWT) is a secure method used for transmitting authentication data between client and server, enabling stateless session management. OAuth is an authorization framework that allows users to securely log in using third-party services such as Google, eliminating the need for separate account credentials within the platform.
+
+1.4.	Overview
+This Software Requirements Specification (SRS) document provides a comprehensive  of the functional and non-functional requirements, system architecture, and external interfaces for the SpeakSpace platform. It outlines how the system will be designed, developed, and deployed using modern web technologies, including a React.js-based frontend for building a responsive and dynamic user interface, a Node.js and Express.js backend for handling business logic and API services, and a MongoDB database for storing user, session, and interaction data. Real-time communication capabilities will be implemented using WebRTC for low-latency audio streaming, supplemented by Socket.io for managing real-time events such as user presence, speaking turns, and messaging. The document serves as a blueprint for developers, designers, and stakeholders, ensuring a shared understanding of system requirements and guiding the development process toward building a scalable, secure, and user-centric application.
+
+
+2.	Overall 
+2.1.	Product Perspective
+SpeakSpace is designed as a modern, scalable, client-server web application that follows a modular and service-oriented architecture. The system consists of a Single Page Application (SPA) frontend developed using React.js, which ensures a highly responsive and seamless user experience without frequent page reloads. This frontend communicates with a backend system built using Node.js and Express.js, which exposes RESTful APIs for handling core business logic such as user management, room creation, session tracking, and analytics.
+In addition to traditional request-response communication, the platform incorporates WebSocket-based real-time services using Socket.io to enable instantaneous bidirectional communication between clients and the server. This is essential for features such as live room updates, speaking turn management, chat messaging, and notifications. A dedicated real-time communication layer powered by WebRTC is responsible for handling low-latency, peer-to-peer audio streaming between participants in a discussion room, ensuring a smooth and natural conversation experience.
+Furthermore, SpeakSpace integrates an AI processing layer that leverages external AI services (such as OpenAI APIs) to perform advanced functionalities including topic generation, natural language processing, sentiment analysis, and feedback generation. This layer operates asynchronously, processing user speech data (converted to text) and returning insights that enhance the overall learning experience. Together, these components form a cohesive system where real-time communication, intelligent moderation, and scalable backend services work in harmony to deliver a production-grade application.
+
+2.2.	User Classes
+SpeakSpace is designed to support multiple categories of users, each with distinct roles, permissions, and interaction patterns within the system.
+The primary user class is the Student, who represents the core audience of the platform. Students use SpeakSpace to join or create group discussion rooms, participate in live voice-based conversations, and receive structured feedback on their communication performance. Their interaction with the system is frequent and feature-rich, involving activities such as raising hands, speaking in turns, engaging in chat, and reviewing analytics after sessions.
+The second user class is the Moderator, who can either be a human facilitator or an AI-driven system. Human moderators are responsible for managing the flow of discussions, assigning speaking turns, maintaining discipline, and ensuring productive engagement among participants. They have elevated permissions that allow them to mute users, remove disruptive participants, and control session dynamics. Moderators typically possess strong communication and leadership skills, enabling them to guide discussions effectively.
+The third user class is the admin, who oversees the entire platform from a system-level perspective. Admin users are responsible for managing user accounts, monitoring active sessions, handling reports, or abuse cases, and ensuring the overall health and performance of the platform. They have access to administrative dashboards and tools that provide insights into system usage, user activity, and operational metrics. Admins play a critical role in maintaining platform integrity and enforcing policies.
+
+2.3.	User Characteristics
+The users of SpeakSpace are expected to have basic digital literacy, including familiarity with web applications, account registration, and navigation through user interfaces. Since the platform heavily relies on voice-based interaction, users should be comfortable using microphones and participating in live audio conversations. A stable internet connection and access to a device with audio capabilities are essential prerequisites for effective participation.
+Students, who form the majority of the user base, are typically beginners or intermediate-level communicators who are actively seeking to improve their speaking, listening, and interpersonal skills. They may include college students preparing for placements, job seekers practicing interview scenarios, or individuals aiming to build confidence in public speaking.
+Moderators, on the other hand, are expected to have advanced communication skills and a good understanding of group discussion dynamics. They should be capable of managing multiple participants, resolving conflicts, and maintaining structured conversations. Their role requires attentiveness, decision-making ability, and the capacity to provide constructive feedback.
+Admins are generally technical or operational personnel who are familiar with system management tools and dashboards. They should be capable of interpreting analytics, managing user data, and ensuring compliance with platform policies. While they may not directly participate in discussions, their role is crucial in maintaining a smooth and secure user experience.
+
+2.4.	Assumptions & Dependencies
+The successful operation of SpeakSpace is based on several assumptions and external dependencies that must be satisfied. Firstly, it is assumed that users will have access to a stable and sufficiently fast internet connection, as real-time audio communication and WebRTC-based streaming are highly sensitive to network latency and bandwidth fluctuations. Poor connectivity may result in degraded audio quality, delays, or disconnections, which can impact the overall user experience.
+Secondly, the platform assumes that users will access the application through modern web browsers that support WebRTC technology, such as Google Chrome, Mozilla Firefox, or Microsoft Edge. Compatibility with these browsers is essential for enabling peer-to-peer audio communication without requiring additional plugins or software installations.
+Another critical dependency is the availability and reliability of external AI services, particularly those used for natural language processing, sentiment analysis, and feedback generation. The system relies on APIs such as OpenAI to deliver intelligent moderation features, and any downtime or latency in these services may affect the responsiveness of AI-driven functionalities.
+Additionally, the platform depends on third-party authentication services, specifically Google OAuth, to provide users with a secure and convenient login option. The availability and proper configuration of these services are essential for seamless user authentication and onboarding.
+Finally, it is assumed that backend infrastructure, including servers, databases, and real-time communication services, will be deployed in a scalable and reliable environment (such as cloud platforms) to handle concurrent users and ensure high availability. These dependencies collectively define the operational boundaries within which SpeakSpace is expected to function effectively.
+
+3.	System Features
+3.1.	User Registration & Login
+The User Registration and Login module is responsible for securely onboarding users onto the SpeakSpace platform and managing their authentication lifecycle. The system supports both traditional email-password-based authentication and third-party authentication via Google OAuth to provide flexibility and ease of access. This module ensures secure identity verification, session handling, and account recovery while maintaining industry-standard security practices.
+Functional Requirements
+•	FR-1: The system shall allow users to register using a valid email address and password. 
+•	FR-2: The system shall authenticate users using JWT-based authentication upon successful login. 
+•	FR-3: The system shall allow users to authenticate using Google OAuth for faster onboarding. 
+•	FR-4: The system shall manage user sessions using secure, token-based mechanisms with expiration and refresh strategies. 
+•	FR-5: The system shall provide a password recovery mechanism via email verification and reset links. 
+Priority: High
+3.2.	Profile Management
+The Profile Management module enables users to create and maintain their personal identity within the platform. It allows customization of user information, tracks user progress, and provides visibility into historical participation and performance data. This module plays a key role in personalizing the user experience and enabling long-term skill tracking.
+Functional Requirements
+•	FR-6: The system shall allow users to update personal details such as name, bio, and skill sets. 
+•	FR-7: The system shall allow users to upload and update a profile image. 
+•	FR-8: The system shall display user-specific performance statistics, including participation metrics and scores. 
+•	FR-9: The system shall provide access to a history of past sessions attended by the user. 
+Priority: Medium
+3.3.	Create/Join GD Rooms
+This feature enables users to create new discussion rooms or join existing ones. Rooms act as the core interaction units where group discussions take place. The system supports both public and private rooms, controlled access via links or codes, and configurable participant limits to ensure effective discussion sizes.
+Functional Requirements
+•	FR-10: The system shall allow users to create GD rooms with configurable settings such as title, topic, and visibility (public/private). 
+•	FR-11: The system shall allow users to join rooms using a unique link or access code. 
+•	FR-12: The system shall enforce a participant limit per room (e.g., 5–10 users) to maintain discussion quality. 
+•	FR-13: The system shall allow assignment of a moderator (AI or human) during room creation. 
+Priority: High
+3.4.	Voice Rooms (Real-Time Audio)
+The Voice Rooms feature provides the core real-time communication capability of the platform. It enables users to communicate via low-latency audio streams using WebRTC technology. The system ensures high-quality voice transmission, minimal delay, and resilience against network disruptions.
+Functional Requirements
+•	FR-14: The system shall enable real-time voice communication using WebRTC protocols. 
+•	FR-15: The system shall maintain low-latency audio streaming (target < 300ms). 
+•	FR-16: The system shall automatically attempt reconnection in case of temporary network interruptions. 
+Priority: Critical
+3.5.	Turn-Based Speaking System
+The Turn-Based Speaking System ensures structured and disciplined communication within GD sessions. It prevents chaos and overlap by managing speaking turns through a controlled mechanism involving user requests and moderator approvals.
+Functional Requirements
+•	FR-17: The system shall provide a “raise hand” feature for users to request speaking turns. 
+•	FR-18: The system shall allow moderators (AI or human) to assign speaking turns. 
+•	FR-19: The system shall allow users and moderators to mute/unmute participants. 
+•	FR-20: The system shall enforce a configurable timer for each speaker. 
+•	FR-21: The system shall maintain a queue of users waiting for their turn. 
+Priority: High
+3.6.	AI Moderator
+The AI Moderator is a core intelligent component of SpeakSpace that enhances discussions through automation and real-time insights. It assists in initiating discussions, monitoring user interactions, analyzing communication patterns, and generating actionable feedback.
+Functional Requirements
+•	FR-22: The system shall dynamically generate GD topics based on predefined categories or user preferences. 
+•	FR-23: The system shall provide real-time feedback during discussions based on user speech analysis. 
+•	FR-24: The system shall perform sentiment analysis on user inputs to evaluate tone and engagement. 
+•	FR-25: The system shall track and record speaking time for each participant. 
+•	FR-26: The system shall generate a structured summary at the end of each session. 
+•	FR-27: The system shall detect interruptions, overlaps, and dominant behavior in discussions. 
+•	FR-28: The system shall provide personalized suggestions for improvement. 
+Priority: Critical
+
+3.7.	Human Moderator Controls
+This feature provides human moderators with tools to actively manage and control GD sessions. It ensures flexibility in handling real-world scenarios where human judgment is required for effective moderation.
+Functional Requirements
+•	FR-29: The system shall allow moderators to manually assign speaking turns. 
+•	FR-30: The system shall allow moderators to remove or block disruptive participants. 
+•	FR-31: The system shall allow moderators to mute all or specific users. 
+•	FR-32: The system shall allow moderators to terminate an ongoing session. 
+Priority: High
+3.8.	Chat System
+The Chat System complements voice communication by enabling text-based interaction within discussion rooms. It supports quick clarifications, sharing points, and non-verbal participation.
+Functional Requirements
+•	FR-33: The system shall allow users to send and receive text messages within a room. 
+•	FR-34: The system shall display timestamps for each message. 
+•	FR-35: The system shall support emojis and basic formatting in messages. 
+Priority: Medium
+3.9.	Room Scheduling
+The Room Scheduling feature allows users to plan discussions in advance, enabling better coordination and participation. It supports time-based session creation and invitation management.
+Functional Requirements
+•	FR-36: The system shall allow users to schedule GD sessions for a future date and time. 
+•	FR-37: The system shall allow users to invite participants via links or notifications. 
+•	FR-38: The system shall integrate with calendar systems for reminders and scheduling. 
+Priority: Medium
+3.10.	Notifications
+The Notifications module ensures users remain informed about important events such as session updates, invitations, and feedback availability. It enhances engagement and timely participation.
+Functional Requirements
+•	FR-39: The system shall provide real-time notifications for in-app events. 
+•	FR-40: The system shall send reminders for scheduled sessions. 
+•	FR-41: The system shall notify users when feedback or results are available. 
+Priority: Medium
+3.11.	Performance Analytics Dashboard
+This module provides users with detailed insights into their communication performance over time. It helps users identify strengths, weaknesses, and improvement areas through visual and data-driven analysis.
+Functional Requirements
+•	FR-42: The system shall display speaking time statistics for each session. 
+•	FR-43: The system shall present sentiment analysis trends across sessions. 
+•	FR-44: The system shall provide actionable suggestions for improving communication skills. 
+Priority: High
+3.12.	Leaderboard / Scoring System
+The Leaderboard and Scoring System introduces gamification elements to motivate users and encourage consistent participation. It ranks users based on performance metrics and rewards achievements.
+Functional Requirements
+•	FR-45: The system shall assign scores based on participation, clarity, and engagement. 
+•	FR-46: The system shall rank users on a leaderboard based on cumulative scores. 
+•	FR-47: The system shall award badges or achievements for milestones. 
+Priority: Medium
+3.13.	Session Recording
+The Session Recording feature allows users to review past discussions by recording audio sessions. This aids in self-evaluation and continuous improvement.
+Functional Requirements
+•	FR-48: The system shall record audio sessions when enabled. 
+•	FR-49: The system shall securely store recorded sessions. 
+•	FR-50: The system shall allow users to playback recorded sessions. 
+Priority: Low
+3.14.	Admin Panel
+The Admin Panel provides centralized control over the platform, enabling administrators to manage users, monitor system activity, and enforce policies.
+Functional Requirements
+•	FR-51: The system shall allow administrators to manage user accounts. 
+•	FR-52: The system shall allow administrators to monitor active and past sessions. 
+•	FR-53: The system shall provide reporting tools for system analytics and usage. 
+•	FR-54: The system shall allow administrators to ban or restrict users violating policies. 
+Priority: High
+
+4.	External Interface Requirements
+4.1.	User Interface
+
+The SpeakSpace platform shall provide a modern, intuitive, and responsive user interface designed using React.js and Tailwind CSS. The interface must prioritize usability, accessibility, and real-time responsiveness to support seamless interaction during live group discussions. The dashboard should present users with clear navigation options, allowing them to easily access features such as joining rooms, viewing analytics, and managing their profiles.
+The system shall include visual indicators to enhance real-time communication awareness, such as highlighting the active speaker, displaying microphone status (muted/unmuted), and showing speaking queues. Real-time updates must be reflected instantly without requiring manual refresh, ensuring synchronization between all participants in a room.
+Additionally, the interface must be fully responsive and optimized for various screen sizes, including desktops, tablets, and mobile devices. The design should minimize cognitive load by maintaining a clean layout, consistent spacing, and intuitive controls, enabling users to focus primarily on communication and interaction rather than navigation.
+
+4.2.	Hardware Interfaces
+The system requires minimal hardware dependencies but relies on certain essential components for optimal functionality. A working microphone is mandatory for users to participate in voice-based discussions, as it enables real-time audio input for communication and AI analysis.
+While not mandatory, the use of headphones or earphones is highly recommended to improve audio clarity and reduce background noise or echo during discussions. The system should be compatible with standard audio input/output devices available on desktops, laptops, tablets, and smartphones, without requiring specialized hardware.
+4.3.	Software Interfaces
+SpeakSpace integrates with several external software systems and APIs to provide advanced functionality and seamless user experience. The platform utilizes AI services (such as OpenAI APIs) to enable intelligent moderation features, including topic generation, sentiment analysis, and feedback generation. These services process user input data and return structured insights that enhance the overall learning experience.
+The system also integrates with Google OAuth APIs to provide secure and convenient authentication, allowing users to log in using their existing Google accounts without creating new credentials. This reduces friction during onboarding and improves user adoption.
+For real-time media communication, the platform relies on WebRTC technology, which enables peer-to-peer audio streaming directly within the browser. This eliminates the need for external plugins and ensures low-latency communication. These software interfaces must be properly configured, secured, and monitored to ensure reliability and performance.
+
+4.4.	Communication Interfaces
+The SpeakSpace platform utilizes multiple communication protocols to facilitate interaction between system components and users. All standard client-server communication for data exchange, such as authentication, room management, and analytics retrieval, shall be conducted over secure HTTPS using RESTful APIs. This ensures data integrity, confidentiality, and compatibility with modern web standards.
+For real-time communication, the system employs WebSocket connections (via Socket.io) to enable bidirectional, low-latency communication between clients and the server. This is critical for features such as live room updates, chat messaging, speaking turn coordination, and notification delivery.
+Additionally, WebRTC is used for direct peer-to-peer media transmission, handling the actual audio streams between participants. Together, these communication interfaces ensure that the platform supports both reliable data exchange and real-time interaction efficiently.
+
+5.	Non-Functional Requirements
+5.1.	Performance
+The system shall be optimized to deliver high-performance real-time communication and fast response times under normal and peak loads. Since the core functionality involves live voice discussions, maintaining low latency is critical for ensuring natural and uninterrupted conversations.
+Requirements
+•	NFR-1: The system shall maintain voice communication latency below 300 milliseconds to ensure smooth real-time interaction. 
+•	NFR-2: The system shall ensure that API response times do not exceed 500 milliseconds under normal operating conditions. 
+
+5.2.	Scalability
+The platform must be designed to scale efficiently to accommodate a growing number of users and sessions without degradation in performance. This includes both vertical and horizontal scalability strategies.
+Requirements
+•	NFR-3: The system shall support at least 10,000 concurrent users participating in multiple sessions simultaneously. 
+•	The system shall implement horizontal scaling using load balancers and distributed server instances to handle increased traffic dynamically. 
+
+5.3.	Security
+Security is a critical aspect of the system, ensuring that user data, communication, and authentication processes are protected against unauthorized access and potential threats.
+Requirements
+•	NFR-4: The system shall implement JWT-based authentication for secure user session management. 
+•	NFR-5: All data transmission between client and server shall be encrypted using HTTPS protocols. 
+•	NFR-6: The system shall implement rate limiting and request validation to prevent abuse, brute-force attacks, and denial-of-service attempts. 
+
+5.4.	Availability
+The system must ensure high availability to provide uninterrupted access to users, especially during live sessions where downtime can significantly impact user experience.
+Requirements
+•	NFR-7: The system shall maintain an uptime of at least 99.9%, supported by reliable infrastructure and failover mechanisms. 
+
+5.5.	Usability
+The platform should be designed with a strong focus on user experience, ensuring that users can quickly understand and effectively use the system without extensive training.
+Requirements
+•	NFR-8: The system shall provide a simple and intuitive onboarding process for new users. 
+•	NFR-9: The user interface shall maintain minimal clutter, clear navigation, and consistent design patterns to enhance usability. 
+
+5.6.	Reliability
+The system must be reliable in handling real-time communication and unexpected failures, ensuring continuity of service even under adverse conditions.
+Requirements
+•	NFR-10: The system shall automatically detect connection failures and attempt reconnection without requiring user intervention.
+6.	Database Design (MongoDB)
+
+ 
+
+
+7.	System Architecture
+7.1.	High-Level Architecture
+SpeakSpace follows a distributed client-server architecture designed for scalability, modularity, and real-time performance. The system is composed of multiple interconnected layers, each responsible for specific functionalities.
+The React Client acts as the presentation layer, delivering a responsive Single Page Application (SPA) that handles user interactions, UI rendering, and communication with backend services. It interacts with backend APIs over HTTPS and maintains persistent WebSocket connections for real-time updates.
+The Node.js API Server functions as the core backend service, handling business logic, authentication, data processing, and RESTful API endpoints. It communicates with the MongoDB database for persistent data storage and retrieval.
+A dedicated WebSocket Server (implemented using Socket.io) is responsible for managing real-time bidirectional communication between clients. It handles events such as user joining/leaving rooms, speaking turn updates, chat messages, and AI feedback delivery.
+The AI Service Layer operates as a separate logical component responsible for processing user-generated content. It integrates with external AI APIs to perform tasks such as topic generation, speech analysis, sentiment detection, and feedback generation.
+Finally, MongoDB serves as the primary database, storing user profiles, room data, session records, messages, and analytics in a flexible, scalable document-oriented format.
+7.2.	Real-Time Communication Flow
+The real-time communication flow defines how users connect and interact within a discussion room using WebSocket and WebRTC technologies.
+When a user joins a room, the client first establishes a WebSocket connection with the server to synchronize room state and participant data. Through this connection, signaling messages required for WebRTC are exchanged.
+Once signaling is complete, a WebRTC peer-to-peer connection is established between participants. This enables direct audio streaming without routing media through the server, reducing latency and improving performance.
+After the connection is established, audio streams are exchanged in real time, allowing users to communicate seamlessly. The WebSocket layer continues to manage control events such as speaking turns, chat messages, and participant updates, ensuring synchronization across all clients.
+7.3.	AI Processing Pipeline
+The AI processing pipeline is responsible for analyzing user communication and generating intelligent feedback during and after discussion sessions.
+Initially, audio input from users is captured and converted into text using a Speech-to-Text (STT) service. This textual data is then processed through natural language processing (NLP) models to extract meaningful insights such as sentiment, tone, and relevance.
+Based on this analysis, the system generates contextual feedback, identifies communication patterns, and evaluates performance metrics. The processed results are then sent back to users via WebSocket in real time or stored for post-session summaries and analytics.
+This pipeline ensures continuous monitoring and evaluation of user interactions, enabling a data-driven learning experience.
+
+8.	Data Flow Diagrams (DFD)
+Data Flow Diagrams (DFDs) provide a visual representation of how data moves through the SpeakSpace system. They illustrate the interaction between users, system processes, and data storage components. The purpose of including DFDs is to clearly define system boundaries, data transformations, and internal workflows.
+8.1.	 Level 0 DFD (Context Diagram)
+The Level 0 DFD represents the entire SpeakSpace system as a single process and shows its interaction with external entities.
+External Entities:
+•	Student/User – Registers, logs in, joins GD rooms, speaks, and receives feedback 
+•	Moderator – Controls discussion flow, assigns speaking turns 
+•	Admin – Manages users, monitors system activity, views reports 
+System Process:
+•	SpeakSpace System – Central system handling all operations including authentication, communication, and AI processing 
+Data Flows:
+•	User credentials (login/register) 
+•	Room join/leave requests 
+•	Audio streams (voice communication) 
+•	AI-generated feedback 
+•	Reports and analytics data 
+Explanation:
+In this diagram, all users interact with the SpeakSpace system, which processes their inputs and returns appropriate outputs such as access permissions, real-time communication, and feedback.
+ 
+
+8.2.	Level 1 DFD
+The Level 1 DFD decomposes the SpeakSpace system into major functional modules.
+Main Processes:
+1. Authentication Module
+•	Handles user registration and login 
+•	Verifies credentials via database 
+•	Supports Google OAuth login 
+2. Room Management Module
+•	Allows users to create, join, and leave GD rooms 
+•	Maintains room state and participant list 
+3. Real-Time Communication Module
+•	Establishes WebSocket connections 
+•	Manages WebRTC peer connections 
+•	Handles live audio streaming between participants 
+4. AI Processing Module
+•	Converts speech to text (Speech-to-Text) 
+•	Performs NLP analysis on user speech 
+•	Generates feedback such as fluency, confidence, and relevance 
+5. Analytics Module
+•	Stores user performance data 
+•	Generates reports and leaderboards 
+•	Tracks speaking time and engagement 
+Data Stores:
+•	User Database (MongoDB) – Stores user profiles and credentials 
+•	Room Database – Stores room details and session data 
+•	Analytics Database – Stores feedback and performance metrics 
+Explanation:
+Each module interacts with others to ensure smooth functioning. For example, the Real-Time Communication module sends audio data to the AI Processing module, which returns feedback that is then displayed to the user.
+ 
+8.3.	Level 2 DFD (AI Feedback Flow)
+This level provides a detailed breakdown of the AI-based feedback system.
+Processes:
+1.	Audio Capture 
+o	Captures voice input from the user during the GD session 
+2.	Speech-to-Text Conversion 
+o	Converts audio stream into textual format 
+3.	Text Processing (NLP) 
+o	Analyzes grammar, sentiment, keyword relevance, and coherence 
+4.	Feedback Generation 
+o	Produces structured feedback including: 
+	Fluency score 
+	Confidence level 
+	Content relevance 
+5.	Feedback Delivery 
+o	Sends feedback to user via WebSocket in real-time 
+Data Flow:
+Audio → Text → Processed Data → Feedback → User
+Explanation:
+This pipeline ensures that users receive instant and meaningful feedback based on their speech, helping them improve communication skills effectively.
+ 
+
+9.	API Design
+
+9.1.	 Authentication APIs
+These APIs handle user authentication, registration, and session management.
+•	POST /api/auth/register: Registers a new user using email and password. 
+•	POST /api/auth/login: Authenticates user credentials and returns a JWT token. 
+•	GET /api/auth/google: Initiates Google OAuth authentication flow. 
+9.2.	Room APIs
+These APIs manage the lifecycle of discussion rooms.
+•	POST /api/rooms/create: Creates a new GD room with specified configurations. 
+•	GET /api/rooms: Retrieves a list of available rooms. 
+•	POST /api/rooms/join: Allows a user to join a room using a code or link. 
+9.3.	User APIs
+These APIs handle user profile management and data retrieval.
+•	GET /api/users/profile: Fetches the authenticated user’s profile information. 
+•	PUT /api/users/update: Updates user profile details. 
+9.4.	Analytics APIs
+These APIs provide performance insights and leaderboard data.
+•	GET /api/analytics/user: Retrieves individual user performance analytics. 
+•	GET /api/analytics/leaderboard: Retrieves ranked leaderboard data. 
+9.5.	WebSocket Events
+The system uses WebSocket events for real-time communication and synchronization.
+•	join_room: Triggered when a user joins a room. 
+•	leave_room: Triggered when a user exits a room. 
+•	speaking_turn: Manages speaking turn assignment and updates. 
+•	chat_message: Handles sending and receiving chat messages. 
+•	ai_feedback: Delivers AI-generated feedback to users. 
+10.	Use Cases 
+UC-1: Join GD Room
+This use case describes how a user joins an active discussion room and begins participating.
+The user logs into the platform and navigates to the list of available rooms. Upon selecting a room or entering a valid access code, the system verifies permissions and allows entry. Once inside, the user establishes real-time connections and can listen to ongoing discussions or request to speak.
+UC-2: AI Moderation
+This use case describes how the AI system moderates and enhances a discussion session.
+At the start of a session, the AI generates or assigns a discussion topic. During the session, it continuously monitors user interactions, analyzes speech patterns, and provides real-time feedback. After the session ends, it generates a structured summary and performance insights for each participant.
+UC-3: Speaking Turn Management
+This use case defines how structured speaking is managed within a discussion.
+A user requests to speak using the raise-hand feature. The request is added to a queue and reviewed by the moderator (AI or human). When approved, the user is granted a speaking turn and allowed to unmute and contribute. After the allotted time, the turn ends and control passes to the next participant
+
+
+11.	Sequence Flows
+11.1.	Joining a Room
+The user initiates a request to join a room via the frontend. The request is processed by the API server, which validates access and returns room details. A WebSocket connection is then established for real-time communication. Subsequently, WebRTC signaling occurs, enabling peer-to-peer audio connections. Once completed, the user successfully joins the room and begins participation.
+
+11.2.	AI Moderation Flow
+User audio is captured and processed through a Speech-to-Text service. The resulting text is analyzed using NLP techniques to evaluate sentiment, clarity, and engagement. Based on this analysis, the AI generates feedback and insights, which are transmitted to users either in real time or after the session concludes.
+
+11.3.	Speaking Turn Flow
+A user raises a request to speak, which is added to a queue managed by the system. The moderator reviews and assigns the speaking turn. The user is then granted permission to speak for a fixed duration. Once the time expires or the user finishes, the turn ends, and the system proceeds to the next participant in the queue.
+
+
+
+
+
+
+12.	Constraints
+12.1.	Technical Constraints
+The system relies heavily on WebRTC technology, which requires compatibility with modern web browsers. Users accessing the platform through unsupported or outdated browsers may experience limited functionality. Additionally, real-time communication performance is highly dependent on network quality, and unstable connections may lead to degraded user experience, including latency, packet loss, or disconnections.
+
+12.2.	Legal and Privacy Constraints
+SpeakSpace must comply with applicable data protection and privacy regulations, including GDPR-like standards where applicable. User data, including audio recordings and performance analytics, must be handled securely and transparently.
+If session recording is enabled, explicit user consent must be obtained before recording begins. The system must also provide mechanisms for users to access, manage, or delete their personal data in compliance with privacy requirements.
+
+13.	Future Enhancements
+
+To ensure long-term growth and adaptability, the SpeakSpace platform is designed with extensibility in mind. Several enhancements can be implemented in future versions to expand functionality and improve user experience.
+Planned Enhancements
+•	Integration of video-based group discussion rooms to enable visual interaction. 
+•	Development of a dedicated mobile application using Flutter for cross-platform accessibility. 
+•	Implementation of advanced AI scoring models for deeper performance evaluation. 
+•	Integration with resume-building tools and interview preparation modules. 
+•	Introduction of a mock interview mode with structured question-answer sessions and AI evaluation.
+
+
+
