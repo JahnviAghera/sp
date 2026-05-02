@@ -42,3 +42,21 @@ jobs:
         npm run build
       env:
         VITE_API_URL: ${{ secrets.VITE_API_URL }}
+
+  deploy:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+    - name: Deploy to EC2
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.EC2_HOST }}
+        username: ubuntu
+        key: ${{ secrets.EC2_SSH_KEY }}
+        script: |
+          cd speakspace || cd temp_repo
+          git pull origin main
+          sudo docker-compose up --build -d
+

@@ -28,8 +28,10 @@ sudo usermod -aG docker $USER
 
 # 3. Clone Repository
 # If the current directory isn't a git repo, clone it.
+# 3. Clone Repository
+REPO_URL="https://github.com/JahnviAghera/sp.git"
 if [ ! -d ".git" ]; then
-    read -p "Enter your GitHub Repository URL: " REPO_URL
+    echo "📂 Cloning Repository..."
     git clone "$REPO_URL" temp_repo
     cd temp_repo
 fi
@@ -37,17 +39,9 @@ fi
 # 4. Environment Configuration
 if [ ! -f ".env" ]; then
     echo "📝 Configuring your environment..."
-    read -p "Enter your GEMINI_API_KEY: " GEMINI_KEY
-    read -p "Enter MongoDB URI (Press ENTER to use local Docker database): " MONGO_URI
-    
-    if [ -z "$MONGO_URI" ]; then
-        MONGO_URI="mongodb://mongodb:27017/speakspace"
-    fi
-
-    read -p "Enter JWT_SECRET (Press ENTER for random): " JWT_SEC
-    if [ -z "$JWT_SEC" ]; then
-        JWT_SEC=$(head /dev/urandom | tr -dc A-Za-z0-9 | head -c 32)
-    fi
+    GEMINI_KEY="AIzaSyDOkXWE-tucx3r-lIBx4ybO0UrQTlIWtMU"
+    MONGO_URI="mongodb://mongodb:27017/speakspace"
+    JWT_SEC="jungkookjeon"
     
     cat <<EOF > .env
 PORT=4000
