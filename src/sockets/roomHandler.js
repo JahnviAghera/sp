@@ -90,6 +90,42 @@ module.exports = (io, socket) => {
     io.to(toSocketId).emit('webrtc_ice', { from: socket.id, candidate });
   };
 
+  const onSpeakingTurn = async ({ roomCode, transcript, userId }) => {
+    const roomState = io.rooms_data[roomCode];
+    if (!roomState) return;
+
+    const user = socket.user_data || { name: 'Anonymous' };
+
+    // 1. Broadcast captions to others
+    socket.to(roomCode).emit('speaking_turn', { 
+      userId, 
+      userName: user.name, 
+      transcript 
+    });
+
+    // 2. Perform AI Analysis (Real-time Insights)
+    const feedback = await aiService.analyzeSpeech({ 
+      transcript, 
+      userName: user.name 
+    });
+    
+    // 3. Send feedback back to the speaker only
+    socket.emit('ai_feedback', { userId, feedback });
+
+    // 4. Persistence for final report
+    const Transcript = require('../models/Transcript');
+    try {
+      await Transcript.create({
+        session: roomState.sessionId,
+        userId: user.id || userId,
+        userName: user.name,
+        text: transcript
+      });
+    } catch (err) {
+      console.error('Failed to save transcript:', err);
+    }
+  };
+
   socket.on('join_room', joinRoom);
   socket.on('leave_room', leaveRoom);
   socket.on('mute_user', muteUser);
@@ -97,4 +133,5 @@ module.exports = (io, socket) => {
   socket.on('webrtc_offer', onOffer);
   socket.on('webrtc_answer', onAnswer);
   socket.on('webrtc_ice', onIce);
+  socket.on('speaking_turn', onSpeakingTurn);
 };

@@ -187,11 +187,11 @@ export default function Room() {
   };
 
   return (
-    <div className="flex-grow flex flex-col h-screen bg-bg-primary overflow-hidden -m-6 relative">
+    <div className="flex-grow flex flex-col min-h-[calc(100vh-180px)] bg-bg-primary rounded-[2.5rem] overflow-hidden border border-white/5 relative shadow-2xl">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-brand-900/10 via-bg-primary to-bg-primary pointer-events-none" />
 
-      <header className="relative z-10 flex items-center justify-between px-8 py-4 glass-strong border-b border-white/5">
-        <div className="flex items-center gap-4">
+      <header className="relative z-10 flex flex-col sm:flex-row items-center justify-between px-6 py-4 glass-strong border-b border-white/5 gap-4">
+        <div className="flex items-center gap-4 w-full sm:w-auto">
           <div className="p-2.5 bg-brand-500/20 rounded-xl">
             <Shield className={isModerator ? "text-yellow-400" : "text-brand-400"} size={20} />
           </div>
@@ -204,22 +204,22 @@ export default function Room() {
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          <button onClick={handleInvite} className="flex items-center gap-2 px-5 py-2 bg-brand-500/10 hover:bg-brand-500/20 text-brand-400 rounded-xl transition-all border border-brand-500/20 font-bold text-sm">
-            <Share size={16} /> Invite
+        <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+          <button onClick={handleInvite} className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-brand-500/10 hover:bg-brand-500/20 text-brand-400 rounded-xl transition-all border border-brand-500/20 font-bold text-xs">
+            <Share size={14} /> Invite
           </button>
-          <div className="flex items-center gap-2 px-4 py-2 bg-dark-900/50 rounded-xl border border-white/5">
-            <Clock size={16} className="text-brand-400" />
-            <span className="font-mono text-sm font-bold text-white">{timeLeft}</span>
+          <div className="flex items-center gap-2 px-3 py-2 bg-dark-900/50 rounded-xl border border-white/5">
+            <Clock size={14} className="text-brand-400" />
+            <span className="font-mono text-xs font-bold text-white">{timeLeft}</span>
           </div>
-          <button onClick={() => navigate(`/report/${code}`)} className="flex items-center gap-2 px-5 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-xl transition-all border border-red-500/20 font-bold text-sm">
-            <PhoneOff size={16} /> Leave
+          <button onClick={() => navigate(`/report/${code}`)} className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-xl transition-all border border-red-500/20 font-bold text-xs">
+            <PhoneOff size={14} /> Leave
           </button>
         </div>
       </header>
 
-      <div className="flex-grow flex overflow-hidden relative z-10">
-        <main className="flex-grow flex flex-col p-6 overflow-hidden">
+      <div className="flex-grow flex overflow-hidden relative z-10 flex-col lg:flex-row">
+        <main className="flex-grow flex flex-col p-4 md:p-6 overflow-y-auto custom-scrollbar">
           <div className="mb-6 p-6 glass-strong rounded-3xl border border-white/5 relative overflow-hidden group">
             <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity"><Info size={80} /></div>
             <div className="relative z-10">

@@ -38,8 +38,10 @@ const AppLayout = () => {
           )}
         </div>
       </header>
-      <main className="flex-grow flex flex-col">
-        <Outlet />
+      <main className="flex-grow flex flex-col p-4 md:p-6 lg:p-8">
+        <div className="max-w-7xl mx-auto w-full flex-grow flex flex-col">
+          <Outlet />
+        </div>
       </main>
     </div>
   );
