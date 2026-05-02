@@ -10,7 +10,7 @@ exports.createRoom = async (req, res) => {
     const { title, isPrivate, maxParticipants, aiModerator } = req.body;
     const code = nanoid(8);
     const room = await Room.create({ title, code, isPrivate: !!isPrivate, maxParticipants: maxParticipants || 8, moderator: req.user.id, aiModerator: aiModerator !== false });
-    res.json({ room });
+    res.json(room);
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Server error' });
@@ -40,7 +40,7 @@ exports.listRooms = async (req, res) => {
                             .sort({ createdAt: -1 })
                             .limit(50)
                             .lean();
-    res.json({ rooms });
+    res.json(rooms);
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Server error' });

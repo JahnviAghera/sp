@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Mic, MicOff, PhoneOff, MessageSquare, Hand, Sparkles, Clock, Info, Shield, ChevronRight, UserMinus, VolumeX, Share } from 'lucide-react';
+import { Mic, MicOff, PhoneOff, Hand, Sparkles, Clock, Info, Shield, ChevronRight, UserMinus, VolumeX, Share } from 'lucide-react';
 import { useSocket } from '../hooks/useSocket';
 import { useWebRTC } from '../hooks/useWebRTC';
 import useAuthStore from '../store/useAuthStore';
@@ -11,12 +11,11 @@ export default function Room() {
   const navigate = useNavigate();
   const { user } = useAuthStore();
   
-  if (!user) return null; // Let ProtectedRoute handle redirection
+  if (!user) return null;
   
   const effectiveUser = user;
-  
   const socket = useSocket(code, effectiveUser);
-  const { peers, localStream } = useWebRTC(socket, code);
+  const { peers, localStream, permissionStatus, requestPermission } = useWebRTC(socket, code);
 
   const [isMuted, setIsMuted] = useState(false);
   const [chatOpen, setChatOpen] = useState(true);
@@ -30,10 +29,8 @@ export default function Room() {
   const [timeLeft, setTimeLeft] = useState('');
 
   const recognitionRef = useRef(null);
-
   const isModerator = roomInfo.moderatorId === effectiveUser.id;
 
-  // Timer logic
   useEffect(() => {
     const timer = setInterval(() => {
       const elapsed = Date.now() - roomInfo.startTime;
@@ -70,7 +67,6 @@ export default function Room() {
       });
     });
 
-    // Send the join event now that we are ready
     if (localStream) {
       socket.emit('join_room', { roomCode: code, user: effectiveUser });
     }
@@ -116,9 +112,8 @@ export default function Room() {
       socket.off('force_kick');
       socket.off('moderator_action');
     };
-  }, [socket, code, effectiveUser.id, localStream, navigate]);
+  }, [socket, code, effectiveUser.id, localStream, navigate, peers]);
 
-  // Separate stable effect for Speech Recognition
   useEffect(() => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition || !socket) return;
@@ -129,19 +124,15 @@ export default function Room() {
     
     recognitionRef.current.onresult = (event) => {
       const transcript = Array.from(event.results).map(r => r[0].transcript).join('');
-      
-      // Display interim results locally immediately
       setCaptions({ name: effectiveUser.name + ' (You)', text: transcript });
       if (window.captionTimeout) clearTimeout(window.captionTimeout);
       window.captionTimeout = setTimeout(() => setCaptions(null), 4000);
 
-      // Emit to others only when the phrase is complete
       if (event.results[event.results.length - 1].isFinal) {
         socket.emit('speaking_turn', { roomCode: code, transcript, userId: effectiveUser.id });
       }
     };
     
-    // Automatically restart if it stops unexpectedly while not muted
     recognitionRef.current.onend = () => {
       if (!isMuted) {
         try { recognitionRef.current.start(); } catch(e) {}
@@ -154,7 +145,7 @@ export default function Room() {
 
     return () => { 
       if (recognitionRef.current) {
-        recognitionRef.current.onend = null; // prevent auto-restart on unmount
+        recognitionRef.current.onend = null;
         recognitionRef.current.stop(); 
       }
     };
@@ -231,10 +222,7 @@ export default function Room() {
                 isLocal={true}
                 isModerator={isModerator}
               />
-              
-              {Object.entries(directory)
-                .filter(([id, dirUser]) => id !== socket.id)
-                .map(([id, dirUser]) => (
+              {Object.entries(directory).filter(([id]) => id !== socket.id).map(([id, dirUser]) => (
                 <ParticipantCard 
                   key={id} 
                   name={dirUser.name || `User_${id.substr(0,4)}`} 
@@ -248,7 +236,6 @@ export default function Room() {
             </div>
           </div>
 
-          {/* Captions Overlay */}
           {captions && (
             <div className="absolute bottom-32 left-1/2 -translate-x-1/2 max-w-3xl w-full text-center px-8 py-5 bg-dark-900/80 backdrop-blur-md rounded-3xl border border-white/10 shadow-2xl z-20 animate-in slide-in-from-bottom-4 fade-in duration-300">
               <p className="text-[10px] font-black text-brand-400 uppercase tracking-widest mb-1">{captions.name}</p>
@@ -316,6 +303,10 @@ export default function Room() {
           </div>
         </aside>
       </div>
+
+      {permissionStatus !== 'granted' && (
+        <PermissionOverlay status={permissionStatus} onRetry={requestPermission} />
+      )}
     </div>
   );
 }
@@ -327,19 +318,15 @@ function ParticipantCard({ name, isSpeaking, isMuted, stream, isLocal, showContr
   return (
     <div className={`relative group aspect-square rounded-[2.5rem] flex flex-col items-center justify-center transition-all duration-500 overflow-hidden ${isSpeaking ? 'bg-brand-500/10 scale-[1.02]' : 'bg-white/5'} border-2 ${isSpeaking ? 'border-brand-500 shadow-lg' : 'border-white/5'}`}>
       {isSpeaking && <div className="absolute inset-0 bg-brand-500/10 animate-pulse" />}
-      
-      {/* Moderator Action Overlay */}
       {showControls && !isLocal && (
         <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity z-20">
           <button onClick={onMute} className="p-2 bg-dark-900/80 hover:bg-red-500 text-white rounded-lg backdrop-blur-md transition-colors"><VolumeX size={16} /></button>
           <button onClick={onKick} className="p-2 bg-dark-900/80 hover:bg-red-600 text-white rounded-lg backdrop-blur-md transition-colors"><UserMinus size={16} /></button>
         </div>
       )}
-
       <div className={`w-24 h-24 rounded-full flex items-center justify-center text-3xl font-black z-10 ${isSpeaking ? 'bg-brand-500 text-white' : 'bg-slate-800 text-slate-500'}`}>
         {name.charAt(0).toUpperCase()}
       </div>
-      
       <div className="mt-6 text-center z-10">
         <div className="flex items-center justify-center gap-2">
           <p className={`text-lg font-bold ${isSpeaking ? 'text-brand-400' : 'text-slate-200'}`}>{name}</p>
@@ -374,6 +361,32 @@ function MetricCard({ label, val, color }) {
       </div>
       <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
         <div className={`h-full ${color === 'brand' ? 'bg-brand-500' : 'bg-purple-500'}`} style={{ width: `${percentage}%` }} />
+      </div>
+    </div>
+  );
+}
+
+function PermissionOverlay({ status, onRetry }) {
+  const isSecure = window.location.protocol === 'https:' || window.location.hostname === 'localhost';
+
+  return (
+    <div className="absolute inset-0 z-[100] flex items-center justify-center bg-bg-primary/95 backdrop-blur-xl animate-in fade-in duration-500">
+      <div className="max-w-md w-full p-10 glass-strong rounded-[3rem] border border-white/10 text-center space-y-8 shadow-2xl">
+        <div className="w-20 h-20 bg-brand-500/20 rounded-full flex items-center justify-center mx-auto animate-pulse">
+          <Mic size={40} className="text-brand-500" />
+        </div>
+        <div>
+          <h2 className="text-2xl font-black text-white mb-3">Microphone Access Required</h2>
+          <p className="text-slate-400 leading-relaxed">Please allow microphone access to participate in the real-time discussion and receive AI feedback.</p>
+        </div>
+        {!isSecure && (
+          <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-2xl text-left">
+            <p className="text-xs font-bold text-red-500 uppercase mb-2 flex items-center gap-2"><Shield size={14} /> Insecure Connection</p>
+            <p className="text-[10px] text-red-400/80 leading-relaxed">Browsers block microphones on non-HTTPS sites. Use localhost or enable the Chrome flag: <code className="block mt-2 p-2 bg-black/30 rounded font-mono text-[9px] break-all whitespace-pre-wrap">chrome://flags/#unsafely-treat-insecure-origin-as-secure</code></p>
+          </div>
+        )}
+        <button onClick={onRetry} className="w-full py-4 bg-brand-500 hover:bg-brand-600 text-white rounded-2xl font-black transition-all shadow-xl shadow-brand-500/20 active:scale-95">{status === 'denied' ? 'Try Again' : 'Allow Microphone'}</button>
+        <p className="text-[10px] text-slate-600 font-bold uppercase tracking-widest">Check your browser address bar for the prompt</p>
       </div>
     </div>
   );
