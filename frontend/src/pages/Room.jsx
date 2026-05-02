@@ -62,13 +62,19 @@ export default function Room() {
       if (data.activeSpeaker) setCurrentSpeaker(data.activeSpeaker);
       if (data.muteStates) setMuteStates(data.muteStates);
       
-      // Merge new user data into directory
+      // Handle directory updates robustly
       if (data.directory) {
+        // Full sync
         setDirectory(data.directory);
       } else if (data.socketId && data.user) {
-        setDirectory(prev => ({ ...prev, [data.socketId]: data.user }));
+        // Incremental update: Only add if not already present or if it's a newer entry
+        setDirectory(prev => ({ 
+          ...prev, 
+          [data.socketId]: data.user 
+        }));
       }
     });
+
 
     socket.on('user_left', ({ socketId }) => {
       setDirectory(prev => {

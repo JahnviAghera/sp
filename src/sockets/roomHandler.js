@@ -52,7 +52,7 @@ module.exports = (io, socket) => {
       }
     }
     
-    // Get directory of current users in room
+    // 1. Get full directory for the person joining
     const directory = {};
     const roomInstance = io.sockets.adapter.rooms.get(roomCode);
     if (roomInstance) {
@@ -62,7 +62,8 @@ module.exports = (io, socket) => {
       }
     }
 
-    io.to(roomCode).emit('user_joined', { 
+    // 2. Send full state ONLY to the joiner
+    socket.emit('user_joined', { 
       user, 
       socketId: socket.id, 
       directory,
@@ -74,7 +75,15 @@ module.exports = (io, socket) => {
       activeSpeaker: roomState.activeSpeaker,
       muteStates: roomState.muteStates
     });
+
+    // 3. Broadcast ONLY the new user to everyone else
+    socket.to(roomCode).emit('user_joined', {
+      user,
+      socketId: socket.id,
+      muteStates: roomState.muteStates // Keep mutes in sync
+    });
   };
+
 
   const leaveRoom = ({ roomCode, user }) => {
     socket.leave(roomCode);
