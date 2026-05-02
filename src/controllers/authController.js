@@ -101,7 +101,7 @@ exports.testApiKey = async (req, res) => {
   try {
     const { GoogleGenerativeAI } = require('@google/generative-ai');
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
     const result = await model.generateContent("Reply with 'OK' if this works.");
     if (result.response.text()) {
       return res.json({ success: true, message: 'API Key is valid!' });
