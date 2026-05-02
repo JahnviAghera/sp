@@ -41,6 +41,7 @@ const RegisterForm = () => {
       <Input
         {...register('name')}
         type="text"
+        autoComplete="name"
         placeholder="Name"
         className={errors.name ? 'border-red-500' : ''}
       />
@@ -49,6 +50,7 @@ const RegisterForm = () => {
       <Input
         {...register('email')}
         type="email"
+        autoComplete="username"
         placeholder="Email"
         className={errors.email ? 'border-red-500' : ''}
       />
@@ -57,6 +59,7 @@ const RegisterForm = () => {
       <Input
         {...register('password')}
         type="password"
+        autoComplete="new-password"
         placeholder="Password"
         className={errors.password ? 'border-red-500' : ''}
       />

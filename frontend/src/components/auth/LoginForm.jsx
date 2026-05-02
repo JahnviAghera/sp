@@ -40,6 +40,7 @@ const LoginForm = () => {
       <Input
         {...register('email')}
         type="email"
+        autoComplete="username"
         placeholder="Email"
         className={errors.email ? 'border-red-500' : ''}
       />
@@ -48,6 +49,7 @@ const LoginForm = () => {
       <Input
         {...register('password')}
         type="password"
+        autoComplete="current-password"
         placeholder="Password"
         className={errors.password ? 'border-red-500' : ''}
       />

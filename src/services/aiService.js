@@ -26,7 +26,7 @@ async function analyzeSpeech({ transcript, userName }) {
     
     const prompt = `
     Analyze this speech segment by ${userName}. 
-    Return JSON with:
+    Return strictly JSON with:
     {
       "summary": "one short constructive sentence",
       "fluency": 0.0-1.0,
@@ -36,7 +36,10 @@ async function analyzeSpeech({ transcript, userName }) {
     `;
     
     const result = await model.generateContent(prompt);
-    return JSON.parse(result.response.text());
+    let text = result.response.text();
+    // Strip markdown formatting if Gemini included it
+    text = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+    return JSON.parse(text);
   } catch (err) {
     console.error('analyzeSpeech error:', err);
     return { summary: 'Analysis paused', fluency: 0.5, confidence: 0.5 };
@@ -52,10 +55,13 @@ async function generateSessionReview(transcripts) {
     });
     
     const script = transcripts.map(t => `[${t.userName}]: ${t.text}`).join('\n');
-    const prompt = `Review this transcript and return a JSON summary including sessionSummary, overallVibe, and an array of participants with scores and feedback. Transcript: ${script}`;
+    const prompt = `Review this transcript and return strictly a JSON summary including sessionSummary, overallVibe, and an array of participants with scores and feedback. Transcript: ${script}`;
     
     const result = await model.generateContent(prompt);
-    return JSON.parse(result.response.text());
+    let text = result.response.text();
+    // Strip markdown formatting if Gemini included it
+    text = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+    return JSON.parse(text);
   } catch (err) {
     console.error('Gemini generateSessionReview error:', err);
     return { error: 'Failed to generate review' };
