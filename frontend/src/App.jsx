@@ -13,6 +13,7 @@ const Dashboard = lazy(() => import('./pages/Dashboard'));
 const RoomPage = lazy(() => import('./pages/Room')); // Remote has Room.jsx
 const CreateRoomPage = lazy(() => import('./pages/CreateRoomPage'));
 const ProfilePage = lazy(() => import('./pages/Profile')); // Remote has Profile.jsx
+const EditProfilePage = lazy(() => import('./pages/EditProfilePage'));
 const AnalyticsPage = lazy(() => import('./pages/AnalyticsPage'));
 const LeaderboardPage = lazy(() => import('./pages/Leaderboard')); // Remote has Leaderboard.jsx
 const AdminPage = lazy(() => import('./pages/AdminPanel')); // Remote has AdminPanel.jsx
@@ -34,6 +35,7 @@ function App() {
               <Route path="/room/:code" element={<ProtectedRoute><RoomPage /></ProtectedRoute>} />
               <Route path="/report/:code" element={<ProtectedRoute><SessionReport /></ProtectedRoute>} />
               <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+              <Route path="/profile/edit" element={<ProtectedRoute><EditProfilePage /></ProtectedRoute>} />
               <Route path="/analytics" element={<ProtectedRoute><AnalyticsPage /></ProtectedRoute>} />
               <Route path="/leaderboard" element={<ProtectedRoute><LeaderboardPage /></ProtectedRoute>} />
               <Route path="/admin" element={<ProtectedRoute adminOnly><AdminPage /></ProtectedRoute>} />

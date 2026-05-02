@@ -7,6 +7,7 @@ router.post('/register', authController.register);
 router.post('/login', authController.login);
 router.get('/profile', authController.requireAuth, authController.getProfile);
 router.put('/profile', authController.requireAuth, authController.updateProfile);
+router.put('/password', authController.requireAuth, authController.updatePassword);
 router.post('/test-key', authController.requireAuth, authController.testApiKey);
 
 // Google OAuth

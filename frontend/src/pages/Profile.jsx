@@ -1,30 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { User, Mail, Award, BookOpen, Clock, Activity, Edit2, Save, ArrowLeft, Key, CheckCircle, XCircle, Loader2 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { authAPI } from '../services/api';
 import useAuthStore from '../store/useAuthStore';
 
 export default function Profile() {
   const navigate = useNavigate();
-  const { user: storeUser, fetchProfile: updateStoreProfile } = useAuthStore();
+  const { user: storeUser } = useAuthStore();
   const [profile, setProfile] = useState(null);
-  const [editing, setEditing] = useState(false);
-  const [formData, setFormData] = useState({ name: '', bio: '', skills: '', geminiApiKey: '' });
   const [loading, setLoading] = useState(true);
-  const [testStatus, setTestStatus] = useState({ status: 'idle', message: '' }); // idle, testing, success, error
 
   useEffect(() => {
     const fetchProfileData = async () => {
       try {
         const response = await authAPI.getProfile();
-        const userData = response.data.user;
-        setProfile(userData);
-        setFormData({
-          name: userData.name,
-          bio: userData.bio || '',
-          skills: (userData.skills || []).join(', '),
-          geminiApiKey: userData.geminiApiKey || ''
-        });
+        setProfile(response.data.user);
       } catch (err) {
         console.error('Failed to fetch profile', err);
       } finally {
@@ -33,37 +23,6 @@ export default function Profile() {
     };
     fetchProfileData();
   }, [storeUser]);
-
-  const handleSave = async () => {
-    try {
-      const updated = {
-        ...formData,
-        skills: (formData.skills || '').toString().split(',').map(s => s.trim()).filter(s => s)
-      };
-      await authAPI.updateProfile(updated);
-      await updateStoreProfile(); // Update global state
-      setProfile({ ...profile, ...updated });
-      setEditing(false);
-      setTestStatus({ status: 'idle', message: '' });
-    } catch (err) {
-      console.error('Failed to update profile', err);
-      setEditing(false);
-    }
-  };
-
-  const handleTestKey = async () => {
-    if (!formData.geminiApiKey) {
-      setTestStatus({ status: 'error', message: 'Please enter a key first' });
-      return;
-    }
-    setTestStatus({ status: 'testing', message: 'Testing connection...' });
-    try {
-      const res = await authAPI.testApiKey({ apiKey: formData.geminiApiKey });
-      setTestStatus({ status: 'success', message: res.data.message });
-    } catch (err) {
-      setTestStatus({ status: 'error', message: err.response?.data?.message || 'Connection failed' });
-    }
-  };
 
   if (loading) return <div className="p-20 text-center text-gray-500">Loading profile...</div>;
   if (!profile) return <div className="p-20 text-center text-gray-500">Could not load profile. Please try again.</div>;
@@ -83,20 +42,24 @@ export default function Profile() {
         <div className="md:col-span-1 space-y-6">
           <div className="bg-dark-800 p-8 rounded-3xl border border-dark-700 text-center relative overflow-hidden group">
             <div className="absolute inset-0 bg-brand-500/5 opacity-0 group-hover:opacity-100 transition-opacity" />
-            <div className="w-24 h-24 bg-brand-500/20 rounded-full flex items-center justify-center text-3xl font-black text-brand-500 mx-auto mb-4 border-2 border-brand-500/30 relative">
-              {profile.name?.charAt(0) || 'U'}
-              <button className="absolute bottom-0 right-0 p-1.5 bg-dark-700 rounded-full border border-dark-600 hover:bg-dark-600 transition-colors">
+            <div className="w-24 h-24 bg-brand-500/20 rounded-full flex items-center justify-center text-3xl font-black text-brand-500 mx-auto mb-4 border-2 border-brand-500/30 relative overflow-hidden">
+              {profile.avatarUrl ? (
+                <img src={profile.avatarUrl} alt={profile.name} className="w-full h-full object-cover" />
+              ) : (
+                profile.name?.charAt(0) || 'U'
+              )}
+              <Link to="/profile/edit" className="absolute bottom-0 right-0 p-1.5 bg-dark-700 rounded-full border border-dark-600 hover:bg-dark-600 transition-colors z-10">
                 <Edit2 size={12} className="text-gray-300" />
-              </button>
+              </Link>
             </div>
             <h2 className="text-2xl font-bold">{profile.name}</h2>
             <p className="text-gray-500 text-sm mb-4">{profile.email}</p>
-            <button 
-              onClick={() => editing ? handleSave() : setEditing(true)}
-              className={`w-full py-2 rounded-xl text-sm font-bold flex items-center justify-center transition-all ${editing ? 'bg-green-500 text-white' : 'bg-dark-700 hover:bg-dark-600 text-gray-300'}`}
+            <Link 
+              to="/profile/edit"
+              className="w-full py-2 rounded-xl text-sm font-bold flex items-center justify-center transition-all bg-dark-700 hover:bg-dark-600 text-gray-300"
             >
-              {editing ? <><Save size={16} className="mr-2" /> Save Changes</> : <><Edit2 size={16} className="mr-2" /> Edit Profile</>}
-            </button>
+              <Edit2 size={16} className="mr-2" /> Edit Profile
+            </Link>
           </div>
 
           <div className="bg-dark-800 p-6 rounded-3xl border border-dark-700">
@@ -116,50 +79,23 @@ export default function Profile() {
               <BookOpen className="text-brand-500 mr-3" size={20} />
               About Me
             </h3>
-            {editing ? (
-              <div className="space-y-4">
-                <div>
-                  <label className="text-[10px] font-bold text-gray-500 uppercase">Name</label>
-                  <input 
-                    className="input-field mt-1 w-full" 
-                    value={formData.name} 
-                    onChange={e => setFormData({...formData, name: e.target.value})} 
-                  />
-                </div>
-                <div>
-                  <label className="text-[10px] font-bold text-gray-500 uppercase">Bio</label>
-                  <textarea 
-                    className="input-field mt-1 h-24 pt-2 w-full" 
-                    value={formData.bio} 
-                    onChange={e => setFormData({...formData, bio: e.target.value})} 
-                  />
-                </div>
-                <div>
-                  <label className="text-[10px] font-bold text-gray-500 uppercase">Skills (comma separated)</label>
-                  <input 
-                    className="input-field mt-1 w-full" 
-                    value={formData.skills} 
-                    onChange={e => setFormData({...formData, skills: e.target.value})} 
-                  />
+            <div className="space-y-6">
+              <p className="text-gray-300 leading-relaxed">
+                {profile.bio || "No bio added yet. Tell us about your communication goals!"}
+              </p>
+              <div>
+                <p className="text-[10px] font-bold text-gray-500 uppercase mb-3">Expertise</p>
+                <div className="flex flex-wrap gap-2">
+                  {(profile.skills || []).length > 0 ? (profile.skills || []).map((skill, i) => (
+                    <span key={i} className="px-3 py-1 bg-dark-900 border border-dark-700 rounded-full text-xs text-brand-500 font-medium">
+                      {skill}
+                    </span>
+                  )) : (
+                    <span className="text-gray-500 text-sm italic">No skills listed</span>
+                  )}
                 </div>
               </div>
-            ) : (
-              <div className="space-y-6">
-                <p className="text-gray-300 leading-relaxed">
-                  {profile.bio || "No bio added yet. Tell us about your communication goals!"}
-                </p>
-                <div>
-                  <p className="text-[10px] font-bold text-gray-500 uppercase mb-3">Expertise</p>
-                  <div className="flex flex-wrap gap-2">
-                    {(profile.skills || []).map((skill, i) => (
-                      <span key={i} className="px-3 py-1 bg-dark-900 border border-dark-700 rounded-full text-xs text-brand-500 font-medium">
-                        {skill}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
+            </div>
           </div>
 
           <div className="bg-dark-800 p-8 rounded-3xl border border-dark-700">
@@ -167,45 +103,18 @@ export default function Profile() {
               <Key className="text-brand-500 mr-3" size={20} />
               AI Integrations
             </h3>
-            {editing ? (
-              <div className="space-y-4">
+            <div className="space-y-4">
+              <div className="flex items-center gap-3 p-4 bg-dark-900 rounded-2xl border border-dark-700">
+                <div className={`w-3 h-3 rounded-full ${profile.geminiApiKey ? 'bg-green-500' : 'bg-red-500'}`} />
                 <div>
-                  <label className="text-[10px] font-bold text-gray-500 uppercase">Gemini API Key</label>
-                  <div className="flex flex-col sm:flex-row gap-3 mt-1">
-                    <input 
-                      type="password"
-                      className="input-field flex-grow" 
-                      placeholder="AIzaSy..."
-                      value={formData.geminiApiKey} 
-                      onChange={e => setFormData({...formData, geminiApiKey: e.target.value})} 
-                    />
-                    <button 
-                      onClick={handleTestKey}
-                      disabled={testStatus.status === 'testing'}
-                      className="px-4 py-2 bg-dark-700 hover:bg-dark-600 text-sm font-bold rounded-xl transition-colors flex items-center justify-center min-w-[120px]"
-                    >
-                      {testStatus.status === 'testing' ? <Loader2 size={16} className="animate-spin" /> : 'Test Connection'}
-                    </button>
-                  </div>
-                  {testStatus.status === 'success' && <p className="text-xs text-green-400 mt-2 flex items-center gap-1"><CheckCircle size={12}/> {testStatus.message}</p>}
-                  {testStatus.status === 'error' && <p className="text-xs text-red-400 mt-2 flex items-center gap-1"><XCircle size={12}/> {testStatus.message}</p>}
-                  <p className="text-[10px] text-gray-500 mt-2">Your key is stored securely in the database and used for your sessions.</p>
+                  <p className="text-sm font-bold text-white">Google Gemini API</p>
+                  <p className="text-xs text-gray-500">
+                    {profile.geminiApiKey ? 'Custom API key configured' : 'Using platform default (Subject to limits)'}
+                  </p>
                 </div>
               </div>
-            ) : (
-              <div className="space-y-4">
-                <div className="flex items-center gap-3 p-4 bg-dark-900 rounded-2xl border border-dark-700">
-                  <div className={`w-3 h-3 rounded-full ${profile.geminiApiKey ? 'bg-green-500' : 'bg-red-500'}`} />
-                  <div>
-                    <p className="text-sm font-bold text-white">Google Gemini API</p>
-                    <p className="text-xs text-gray-500">
-                      {profile.geminiApiKey ? 'Custom API key configured' : 'Using platform default (Subject to limits)'}
-                    </p>
-                  </div>
-                </div>
-                <p className="text-xs text-gray-400 italic">Click "Edit Profile" to add or update your personal API key.</p>
-              </div>
-            )}
+              <p className="text-xs text-gray-400 italic">Click "Edit Profile" to add or update your personal API key.</p>
+            </div>
           </div>
 
           <div className="bg-dark-800 p-8 rounded-3xl border border-dark-700">
@@ -227,7 +136,7 @@ export default function Profile() {
             ) : (
               <div className="text-center py-10 border border-dashed border-white/10 rounded-2xl">
                 <p className="text-slate-500 text-sm">No sessions completed yet.</p>
-                <a href="/rooms/new" className="text-brand-500 text-xs font-bold hover:underline mt-2 inline-block">Join your first session →</a>
+                <Link to="/rooms/new" className="text-brand-500 text-xs font-bold hover:underline mt-2 inline-block">Join your first session →</Link>
               </div>
             )}
           </div>
@@ -248,4 +157,3 @@ function StatRow({ icon, label, value }) {
     </div>
   );
 }
-
