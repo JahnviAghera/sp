@@ -1,0 +1,81 @@
+{
+  "config": {
+    "target": "http://3.88.239.189",
+    "phases": [
+      {
+        "name": "Warm up",
+        "duration": 30,
+        "arrivalRate": 2,
+        "rampTo": 5
+      },
+      {
+        "name": "Ramp Up Load",
+        "duration": 60,
+        "arrivalRate": 5,
+        "rampTo": 20
+      },
+      {
+        "name": "Peak Load",
+        "duration": 60,
+        "arrivalRate": 20
+      },
+      {
+        "name": "Spike Test",
+        "duration": 30,
+        "arrivalRate": 50
+      }
+    ],
+    "defaults": {
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    }
+  },
+  "scenarios": [
+    {
+      "name": "Browse Landing Page",
+      "weight": 40,
+      "flow": [
+        { "get": { "url": "/" } }
+      ]
+    },
+    {
+      "name": "API Health Check",
+      "weight": 20,
+      "flow": [
+        { "get": { "url": "/health" } }
+      ]
+    },
+    {
+      "name": "User Registration Flow",
+      "weight": 20,
+      "flow": [
+        {
+          "post": {
+            "url": "/api/auth/register",
+            "json": {
+              "name": "Test User {{ $randomString() }}",
+              "email": "test{{ $randomString() }}@test.com",
+              "password": "TestPass123!"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "User Login Flow",
+      "weight": 20,
+      "flow": [
+        {
+          "post": {
+            "url": "/api/auth/login",
+            "json": {
+              "email": "demo@speakspace.com",
+              "password": "demo123"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
