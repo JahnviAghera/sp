@@ -294,6 +294,7 @@ export default function Room() {
                     name={dirUser.name || `User_${id.substr(0, 4)}`}
                     isSpeaking={currentSpeaker?.socketId === id}
                     isMuted={!!muteStates[id]}
+                    connectionState={peers[id]?.connectionState}
                     stream={peers[id]?.stream}
                     showControls={isModerator}
                     onMute={() => muteParticipant(id)}
@@ -383,7 +384,7 @@ export default function Room() {
 }
 
 
-function ParticipantCard({ name, isSpeaking, isMuted, stream, isLocal, showControls, onMute, onKick, isModerator }) {
+function ParticipantCard({ name, isSpeaking, isMuted, stream, isLocal, showControls, onMute, onKick, isModerator, connectionState }) {
   const audioRef = useRef();
   const volume = useAudioLevel(stream, isMuted);
 
@@ -398,8 +399,19 @@ function ParticipantCard({ name, isSpeaking, isMuted, stream, isLocal, showContr
     }
   }, [stream, isLocal]);
 
+  const isConnecting = !isLocal && connectionState && connectionState !== 'connected' && connectionState !== 'completed';
+
   return (
     <div className={`relative group aspect-square rounded-[2.5rem] flex flex-col items-center justify-center transition-all duration-500 overflow-hidden ${isSpeaking ? 'bg-brand-500/10 scale-[1.02]' : 'bg-white/5'} border-2 ${isSpeaking ? 'border-brand-500 shadow-lg' : 'border-white/5'}`}>
+      
+      {/* Connecting Overlay */}
+      {isConnecting && (
+        <div className="absolute inset-0 z-30 bg-dark-900/80 backdrop-blur-md flex flex-col items-center justify-center text-center p-6 animate-in fade-in duration-300">
+          <div className="w-12 h-12 border-4 border-brand-500/30 border-t-brand-500 rounded-full animate-spin mb-4" />
+          <p className="text-xs font-black text-white uppercase tracking-[0.2em]">Connecting...</p>
+          <p className="text-[10px] text-slate-500 mt-2 font-bold uppercase tracking-widest">Establishing secure audio</p>
+        </div>
+      )}
       {/* Dynamic Voice Ring */}
       {!isMuted && volume > 5 && (
         <div 

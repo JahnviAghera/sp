@@ -58,6 +58,13 @@ export const useWebRTC = (socket, roomCode) => {
         }
       };
 
+      pc.onconnectionstatechange = () => {
+        setPeers(prev => ({
+          ...prev,
+          [targetSocketId]: { ...prev[targetSocketId], connectionState: pc.connectionState }
+        }));
+      };
+
       pc.ontrack = (event) => {
         setPeers(prev => ({
           ...prev,
