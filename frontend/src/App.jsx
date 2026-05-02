@@ -19,6 +19,8 @@ const LeaderboardPage = lazy(() => import('./pages/Leaderboard')); // Remote has
 const AdminPage = lazy(() => import('./pages/AdminPanel')); // Remote has AdminPanel.jsx
 const SessionReport = lazy(() => import('./pages/SessionReport'));
 const SessionHistory = lazy(() => import('./pages/SessionHistory'));
+const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
+const ResetPassword = lazy(() => import('./pages/ResetPassword'));
 
 function App() {
   return (
@@ -29,6 +31,8 @@ function App() {
             <Route path="/" element={<LandingPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password/:token" element={<ResetPassword />} />
             <Route element={<AppLayout />}>
               <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
               <Route path="/rooms/new" element={<ProtectedRoute><CreateRoomPage /></ProtectedRoute>} />

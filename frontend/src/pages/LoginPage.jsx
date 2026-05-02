@@ -61,6 +61,10 @@ const LoginPage = () => {
               {errors.password && <p className="text-red-500 text-[10px] mt-1.5 ml-1 font-bold uppercase tracking-widest">{errors.password.message}</p>}
             </div>
             
+            <div className="flex justify-end">
+              <Link to="/forgot-password" virtual="true" className="text-xs font-bold text-brand-400 hover:text-brand-300 transition-colors uppercase tracking-widest">Forgot Password?</Link>
+            </div>
+            
             <div className="pt-2">
               <Button 
                 type="submit" 

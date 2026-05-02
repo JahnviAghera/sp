@@ -66,9 +66,18 @@ export const useWebRTC = (socket, roomCode) => {
       };
 
       pc.ontrack = (event) => {
+        console.log('Received remote track from:', targetSocketId);
+        // Reconstruct a fresh MediaStream to ensure audio plays reliably
+        const remoteStream = new MediaStream();
+        if (event.streams && event.streams[0]) {
+          event.streams[0].getTracks().forEach(track => remoteStream.addTrack(track));
+        } else {
+          remoteStream.addTrack(event.track);
+        }
+
         setPeers(prev => ({
           ...prev,
-          [targetSocketId]: { ...prev[targetSocketId], stream: event.streams[0] }
+          [targetSocketId]: { ...prev[targetSocketId], stream: remoteStream }
         }));
       };
 

@@ -402,7 +402,10 @@ function ParticipantCard({ name, isSpeaking, isMuted, stream, isLocal, showContr
   const isConnecting = !isLocal && connectionState && connectionState !== 'connected' && connectionState !== 'completed';
 
   return (
-    <div className={`relative group aspect-square rounded-[2.5rem] flex flex-col items-center justify-center transition-all duration-500 overflow-hidden ${isSpeaking ? 'bg-brand-500/10 scale-[1.02]' : 'bg-white/5'} border-2 ${isSpeaking ? 'border-brand-500 shadow-lg' : 'border-white/5'}`}>
+    <div 
+      onClick={() => audioRef.current?.play().catch(e => console.error("Manual play failed", e))}
+      className={`relative group aspect-square rounded-[2.5rem] flex flex-col items-center justify-center transition-all duration-500 overflow-hidden cursor-pointer ${isSpeaking ? 'bg-brand-500/10 scale-[1.02]' : 'bg-white/5'} border-2 ${isSpeaking ? 'border-brand-500 shadow-lg' : 'border-white/5'}`}
+    >
       
       {/* Connecting Overlay */}
       {isConnecting && (
@@ -432,14 +435,13 @@ function ParticipantCard({ name, isSpeaking, isMuted, stream, isLocal, showContr
 
       <div className={`relative w-24 h-24 rounded-full flex items-center justify-center text-3xl font-black z-10 transition-all duration-200 ${isSpeaking ? 'bg-brand-500 text-white scale-110 shadow-xl shadow-brand-500/40' : 'bg-slate-800 text-slate-500'}`}>
         {name.charAt(0).toUpperCase()}
-        {/* Real-time volume bars */}
         {!isMuted && (
           <div className="absolute -bottom-2 flex gap-0.5 h-4 items-end">
-            {[1, 2, 3, 4].map(i => (
+            {[...Array(5)].map((_, i) => (
               <div 
                 key={i} 
-                className="w-1 bg-brand-400 rounded-full transition-all duration-100" 
-                style={{ height: `${Math.max(20, volume * (1 - i*0.1))}%` }} 
+                className="w-1 bg-brand-400 rounded-full transition-all duration-75"
+                style={{ height: `${Math.max(10, Math.random() * volume)}%`, opacity: 0.5 + (volume/200) }}
               />
             ))}
           </div>
@@ -447,10 +449,7 @@ function ParticipantCard({ name, isSpeaking, isMuted, stream, isLocal, showContr
       </div>
 
       <div className="mt-6 text-center z-10">
-        <div className="flex items-center justify-center gap-2">
-          <p className={`text-lg font-bold ${isSpeaking ? 'text-brand-400' : 'text-slate-200'}`}>{name}</p>
-          {isModerator && isLocal && <Shield size={14} className="text-yellow-400" />}
-        </div>
+        <p className="text-sm font-black text-white tracking-tight">{name}</p>
         <div className="flex items-center justify-center gap-2 mt-1">
           {isMuted ? (
             <div className="flex items-center gap-1 text-red-500">
@@ -462,7 +461,17 @@ function ParticipantCard({ name, isSpeaking, isMuted, stream, isLocal, showContr
           )}
         </div>
       </div>
-      {stream && !isLocal && <audio ref={audioRef} autoPlay playsInline />}
+
+      {stream && !isLocal && (
+        <audio 
+          ref={audioRef} 
+          autoPlay 
+          playsInline 
+          controls={false}
+          muted={false}
+          style={{ display: 'none' }}
+        />
+      )}
     </div>
   );
 }

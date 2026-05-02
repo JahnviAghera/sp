@@ -13,6 +13,8 @@ const UserSchema = new mongoose.Schema({
     sessionsParticipated: { type: Number, default: 0 }
   },
   geminiApiKey: { type: String, default: null },
+  resetPasswordToken: { type: String },
+  resetPasswordExpires: { type: Date },
   createdAt: { type: Date, default: Date.now }
 });
 
