@@ -38,7 +38,7 @@ export default function Profile() {
     try {
       const updated = {
         ...formData,
-        skills: formData.skills.split(',').map(s => s.trim()).filter(s => s)
+        skills: (formData.skills || '').toString().split(',').map(s => s.trim()).filter(s => s)
       };
       await authAPI.updateProfile(updated);
       await updateStoreProfile(); // Update global state
