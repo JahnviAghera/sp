@@ -26,6 +26,6 @@ function initSocket(server) {
   });
 }
 
-module.exports = { initSocket };
+const getIO = () => io;
 
-module.exports = { initSocket };
+module.exports = { initSocket, getIO };

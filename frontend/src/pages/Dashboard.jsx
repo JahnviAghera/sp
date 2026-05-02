@@ -117,7 +117,7 @@ export default function Dashboard() {
                           {room.topic || 'General'}
                         </span>
                         <div className="flex items-center gap-1 text-slate-500 text-xs font-bold">
-                          <Users size={12} /> {room.participants?.length || 0}/{room.maxParticipants}
+                          <Users size={12} /> {room.activeCount || 0}/{room.maxParticipants}
                         </div>
                       </div>
                       <h4 className="text-lg font-bold text-white mb-1 line-clamp-1">{room.title}</h4>

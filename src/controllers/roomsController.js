@@ -36,11 +36,24 @@ exports.joinRoom = async (req, res) => {
 
 exports.listRooms = async (req, res) => {
   try {
+    const { getIO } = require('../socket');
+    const io = getIO();
+
     const rooms = await Room.find({ isPrivate: false })
                             .sort({ createdAt: -1 })
                             .limit(50)
                             .lean();
-    res.json(rooms);
+    
+    // Add real-time active count for each room
+    const roomsWithCount = rooms.map(room => {
+      const socketRoom = io?.sockets.adapter.rooms.get(room.code);
+      return {
+        ...room,
+        activeCount: socketRoom ? socketRoom.size : 0
+      };
+    });
+
+    res.json(roomsWithCount);
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Server error' });
