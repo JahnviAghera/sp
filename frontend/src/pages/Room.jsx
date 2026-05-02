@@ -139,6 +139,11 @@ export default function Room() {
       toast(`${targetName} was ${action}d by moderator`, { icon: '🛡️' });
     });
 
+    socket.on('session_ended', ({ sessionId }) => {
+      toast.success('Session ended by moderator. Redirecting to report...');
+      setTimeout(() => navigate(`/report/${code}`), 2000);
+    });
+
     return () => {
       socket.off('user_joined');
       socket.off('user_left');
@@ -266,9 +271,23 @@ export default function Room() {
             <Clock size={14} className="text-brand-400" />
             <span className="font-mono text-xs font-bold text-white">{timeLeft}</span>
           </div>
-          <button onClick={() => navigate(`/report/${code}`)} className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-xl transition-all border border-red-500/20 font-bold text-xs">
-            <PhoneOff size={14} /> Leave
-          </button>
+          
+          {isModerator ? (
+            <button 
+              onClick={() => {
+                if (window.confirm('Are you sure you want to end this session for everyone?')) {
+                  socket.emit('end_session', { roomCode: code });
+                }
+              }} 
+              className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-xl transition-all shadow-lg shadow-red-500/20 font-bold text-xs"
+            >
+              <Power size={14} /> End Session
+            </button>
+          ) : (
+            <button onClick={() => navigate(`/report/${code}`)} className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-xl transition-all border border-red-500/20 font-bold text-xs">
+              <PhoneOff size={14} /> Leave
+            </button>
+          )}
         </div>
       </header>
 

@@ -204,6 +204,31 @@ module.exports = (io, socket) => {
     io.to(roomCode).emit('mute_state_changed', { socketId: socket.id, isMuted });
   };
 
+  const onEndSession = async ({ roomCode }) => {
+    const roomState = io.rooms_data[roomCode];
+    if (!roomState) return;
+
+    // 1. Fetch all transcripts for this session
+    const Transcript = require('../models/Transcript');
+    const transcripts = await Transcript.find({ session: roomState.sessionId }).sort({ createdAt: 1 });
+
+    // 2. Generate final AI review
+    const review = await aiService.generateSessionReview(transcripts);
+
+    // 3. Save review to DB
+    const Session = require('../models/Session');
+    await Session.findByIdAndUpdate(roomState.sessionId, { 
+      review, 
+      endedAt: Date.now() 
+    });
+
+    // 4. Broadcast to all users to show report
+    io.to(roomCode).emit('session_ended', { roomCode, sessionId: roomState.sessionId });
+    
+    // 5. Cleanup room state
+    delete io.rooms_data[roomCode];
+  };
+
   socket.on('join_room', joinRoom);
   socket.on('leave_room', leaveRoom);
   socket.on('mute_user', muteUser);
@@ -213,4 +238,5 @@ module.exports = (io, socket) => {
   socket.on('webrtc_answer', onAnswer);
   socket.on('webrtc_ice', onIce);
   socket.on('speaking_turn', onSpeakingTurn);
+  socket.on('end_session', onEndSession);
 };
