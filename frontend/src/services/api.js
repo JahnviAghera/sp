@@ -31,6 +31,7 @@ export const authAPI = {
   register: (userData) => api.post('/auth/register', userData),
   getProfile: () => api.get('/auth/profile'),
   updateProfile: (data) => api.put('/auth/profile', data),
+  testApiKey: (data) => api.post('/auth/test-key', data),
 };
 
 export const roomAPI = {

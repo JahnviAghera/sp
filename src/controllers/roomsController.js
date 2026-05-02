@@ -92,7 +92,9 @@ exports.getRoomReview = async (req, res) => {
     // Check if session already has a review cached
     let review = session.review;
     if (!review) {
-      review = await aiService.generateSessionReview(transcripts);
+      await room.populate('moderator');
+      const moderatorKey = room.moderator?.geminiApiKey;
+      review = await aiService.generateSessionReview(transcripts, moderatorKey);
       if (review.error) return res.status(500).json({ message: review.error });
       
       // Permanently store the review in the session

@@ -9,8 +9,9 @@ module.exports = (io, socket) => {
     
     if (!io.rooms_data) io.rooms_data = {};
     if (!io.rooms_data[roomCode]) {
-      const room = await Room.findOne({ code: roomCode });
-      const { topic } = await aiService.generateTopic({ seed: room?.topic || 'Professional Skills' });
+      const room = await Room.findOne({ code: roomCode }).populate('moderator');
+      const moderatorKey = room?.moderator?.geminiApiKey;
+      const { topic } = await aiService.generateTopic({ seed: room?.topic || 'Professional Skills', userApiKey: moderatorKey });
       
       let sessionId = null;
       if (room) {
@@ -104,9 +105,17 @@ module.exports = (io, socket) => {
     });
 
     // 2. Perform AI Analysis (Real-time Insights)
+    let userApiKey = null;
+    if (user && user.id) {
+      const User = require('../models/User');
+      const dbUser = await User.findById(user.id);
+      userApiKey = dbUser?.geminiApiKey;
+    }
+
     const feedback = await aiService.analyzeSpeech({ 
       transcript, 
-      userName: user.name 
+      userName: user.name,
+      userApiKey
     });
     
     // 3. Send feedback back to the speaker only
