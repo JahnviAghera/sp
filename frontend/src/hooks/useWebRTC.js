@@ -99,10 +99,23 @@ export const useWebRTC = (socket, roomCode) => {
       if (!granted) return;
 
       socket.on('user_joined', async ({ user, socketId, directory }) => {
+        // If someone else joins, check if we have a stale connection for this user ID
+        if (socketId !== socket.id && user?.id) {
+          Object.keys(pcs.current).forEach(sid => {
+            // We can't easily check user ID from pcs.current unless we store it, 
+            // but we can check if it's in our peers state
+            if (peers[sid]?.userId === user.id && sid !== socketId) {
+              console.log('Closing stale peer connection for user:', user.id);
+              pcs.current[sid]?.close();
+              delete pcs.current[sid];
+            }
+          });
+        }
+
         if (socketId === socket.id && directory) {
           for (const [sid, u] of Object.entries(directory)) {
             if (sid !== socket.id) {
-              setPeers(prev => ({ ...prev, [sid]: { name: u.name } }));
+              setPeers(prev => ({ ...prev, [sid]: { name: u.name, userId: u.id } }));
               await createPeerConnection(sid, true);
             }
           }
@@ -110,9 +123,10 @@ export const useWebRTC = (socket, roomCode) => {
         }
         setPeers(prev => ({
           ...prev,
-          [socketId]: { ...prev[socketId], name: user?.name || 'Peer' }
+          [socketId]: { ...prev[socketId], name: user?.name || 'Peer', userId: user?.id }
         }));
       });
+
 
       socket.on('webrtc_offer', async ({ from, offer }) => {
         const pc = await createPeerConnection(from, false);

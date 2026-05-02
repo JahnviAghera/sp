@@ -64,16 +64,22 @@ export default function Room() {
       
       // Handle directory updates robustly
       if (data.directory) {
-        // Full sync
         setDirectory(data.directory);
       } else if (data.socketId && data.user) {
-        // Incremental update: Only add if not already present or if it's a newer entry
-        setDirectory(prev => ({ 
-          ...prev, 
-          [data.socketId]: data.user 
-        }));
+        setDirectory(prev => {
+          const next = { ...prev };
+          // Remove any old socket IDs for this same user to prevent duplicates/ghosts
+          Object.keys(next).forEach(sid => {
+            if (next[sid].id === data.user.id && sid !== data.socketId) {
+              delete next[sid];
+            }
+          });
+          next[data.socketId] = data.user;
+          return next;
+        });
       }
     });
+
 
 
     socket.on('user_left', ({ socketId }) => {
