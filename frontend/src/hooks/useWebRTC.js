@@ -18,6 +18,14 @@ export const useWebRTC = (socket, roomCode) => {
       localStreamRef.current = stream;
       setLocalStream(stream);
       setPermissionStatus('granted');
+
+      // Retroactively add tracks to any existing peer connections
+      Object.values(pcs.current).forEach(pc => {
+        if (pc.getSenders().length === 0) {
+          stream.getTracks().forEach(track => pc.addTrack(track, stream));
+        }
+      });
+
       return true;
     } catch (err) {
       console.error('WebRTC Permission Error:', err);
@@ -25,6 +33,7 @@ export const useWebRTC = (socket, roomCode) => {
       return false;
     }
   };
+
 
   useEffect(() => {
     if (!socket) return;

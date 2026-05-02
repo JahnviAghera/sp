@@ -7,22 +7,25 @@ export const useSocket = (roomCode, user) => {
   const [socket, setSocket] = useState(null);
 
   useEffect(() => {
-    if (!roomCode || !user) return;
+    if (!roomCode || !user?.id) return;
 
     const newSocket = io(SOCKET_URL, {
       transports: ['websocket'],
-      reconnection: true
+      reconnection: true,
+      query: { userId: user.id }
     });
+
+    setSocket(newSocket);
 
     newSocket.on('connect', () => {
       console.log('Socket connected:', newSocket.id);
-      setSocket(newSocket);
     });
 
     return () => {
       newSocket.disconnect();
     };
-  }, [roomCode, user]);
+  }, [roomCode, user?.id]);
+
 
   return socket;
 };

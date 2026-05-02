@@ -368,7 +368,12 @@ function ParticipantCard({ name, isSpeaking, isMuted, stream, isLocal, showContr
 
   useEffect(() => { 
     if (audioRef.current && stream && !isLocal) {
-      audioRef.current.srcObject = stream; 
+      audioRef.current.srcObject = stream;
+      // Explicitly call play to handle browser autoplay policies
+      audioRef.current.play().catch(err => {
+        console.warn("Autoplay blocked or failed:", err);
+        // Note: Usually requires a user click elsewhere on the page to resolve
+      });
     }
   }, [stream, isLocal]);
 
