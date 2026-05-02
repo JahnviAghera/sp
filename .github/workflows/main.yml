@@ -72,12 +72,70 @@ jobs:
           sudo docker system prune -af --volumes
           sudo docker builder prune -af
           
-          # Launch and Build
-          if command -v docker-compose &> /dev/null; then
-            sudo docker-compose up --build -d
-          else
-            sudo docker compose up --build -d
+          # Launch with Safe Config (Port 80)
+          sudo docker compose up --build -d
+          
+          # 1. Request SSL Certificate if it doesn't exist
+          if [ ! -f "./certbot/conf/live/3.88.239.189.nip.io/fullchain.pem" ]; then
+            echo "Requesting SSL Certificate..."
+            sudo docker run --rm \
+              -v "$(pwd)/certbot/conf:/etc/letsencrypt" \
+              -v "$(pwd)/certbot/www:/var/www/certbot" \
+              certbot/certbot certonly --webroot -w /var/www/certbot \
+              -d 3.88.239.189.nip.io --email jahnu@example.com --agree-tos --no-eff-email
           fi
+
+          # 2. Update Nginx to use SSL (The "Final" Config)
+          # We create the SSL config on the fly or swap it
+          cat <<EOF > nginx.conf
+upstream speakspace_backend {
+    least_conn;
+    server backend:4000;
+    server backend:4000;
+    keepalive 32;
+}
+
+server {
+    listen 80;
+    server_name 3.88.239.189.nip.io;
+    location /.well-known/acme-challenge/ { root /var/www/certbot; }
+    location / { return 301 https://\$host\$request_uri; }
+}
+
+server {
+    listen 443 ssl;
+    server_name 3.88.239.189.nip.io;
+    ssl_certificate /etc/letsencrypt/live/3.88.239.189.nip.io/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/3.88.239.189.nip.io/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers HIGH:!aNULL:!MD5;
+
+    location / {
+        root /usr/share/nginx/html;
+        try_files \$uri \$uri/ /index.html;
+    }
+
+    location /api/ {
+        proxy_pass http://speakspace_backend;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host \$host;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+    }
+
+    location /socket.io/ {
+        proxy_pass http://speakspace_backend;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host \$host;
+    }
+}
+EOF
+          
+          # 3. Restart Frontend to apply SSL
+          sudo docker compose up -d frontend
           
           # Show final disk space
           df -h
