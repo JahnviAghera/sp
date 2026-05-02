@@ -66,9 +66,12 @@ else
 fi
 
 echo "✅ SETUP COMPLETE!"
+PUBLIC_IP=$(curl -s ifconfig.me)
+echo "------------------------------------------------"
+echo "🌐 Frontend Link: http://$PUBLIC_IP"
+echo "📊 Monitoring Dashboard: http://$PUBLIC_IP:8080"
 echo "------------------------------------------------"
 echo "Your app is now running in the background."
-echo "Access it via your EC2 Public IP on Port 80."
 echo "To see logs: sudo docker-compose logs -f"
 echo "To stop: sudo docker-compose down"
 echo "------------------------------------------------"

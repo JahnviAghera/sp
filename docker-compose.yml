@@ -30,6 +30,15 @@ services:
       - backend
     restart: always
 
+  # Monitoring System (Category 10: Advanced Ops)
+  monitoring:
+    image: amir20/dozzle:latest
+    ports:
+      - "8080:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    restart: always
+
 volumes:
   mongodb_data:
 
