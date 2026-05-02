@@ -336,10 +336,24 @@ export default function Room() {
 
 function ParticipantCard({ name, isSpeaking, isMuted, stream, isLocal, showControls, onMute, onKick, isModerator }) {
   const audioRef = useRef();
-  useEffect(() => { if (audioRef.current && stream) audioRef.current.srcObject = stream; }, [stream]);
+  const volume = useAudioLevel(stream, isMuted);
+
+  useEffect(() => { 
+    if (audioRef.current && stream && !isLocal) {
+      audioRef.current.srcObject = stream; 
+    }
+  }, [stream, isLocal]);
 
   return (
     <div className={`relative group aspect-square rounded-[2.5rem] flex flex-col items-center justify-center transition-all duration-500 overflow-hidden ${isSpeaking ? 'bg-brand-500/10 scale-[1.02]' : 'bg-white/5'} border-2 ${isSpeaking ? 'border-brand-500 shadow-lg' : 'border-white/5'}`}>
+      {/* Dynamic Voice Ring */}
+      {!isMuted && volume > 5 && (
+        <div 
+          className="absolute w-32 h-32 rounded-full border-4 border-brand-500/30 animate-ping opacity-20"
+          style={{ transform: `scale(${1 + volume / 100})` }}
+        />
+      )}
+      
       {isSpeaking && <div className="absolute inset-0 bg-brand-500/10 animate-pulse" />}
 
       {/* Moderator Action Overlay */}
@@ -350,8 +364,20 @@ function ParticipantCard({ name, isSpeaking, isMuted, stream, isLocal, showContr
         </div>
       )}
 
-      <div className={`w-24 h-24 rounded-full flex items-center justify-center text-3xl font-black z-10 ${isSpeaking ? 'bg-brand-500 text-white' : 'bg-slate-800 text-slate-500'}`}>
+      <div className={`relative w-24 h-24 rounded-full flex items-center justify-center text-3xl font-black z-10 transition-all duration-200 ${isSpeaking ? 'bg-brand-500 text-white scale-110 shadow-xl shadow-brand-500/40' : 'bg-slate-800 text-slate-500'}`}>
         {name.charAt(0).toUpperCase()}
+        {/* Real-time volume bars */}
+        {!isMuted && (
+          <div className="absolute -bottom-2 flex gap-0.5 h-4 items-end">
+            {[1, 2, 3, 4].map(i => (
+              <div 
+                key={i} 
+                className="w-1 bg-brand-400 rounded-full transition-all duration-100" 
+                style={{ height: `${Math.max(20, volume * (1 - i*0.1))}%` }} 
+              />
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="mt-6 text-center z-10">
@@ -360,13 +386,63 @@ function ParticipantCard({ name, isSpeaking, isMuted, stream, isLocal, showContr
           {isModerator && isLocal && <Shield size={14} className="text-yellow-400" />}
         </div>
         <div className="flex items-center justify-center gap-2 mt-1">
-          {isMuted && <MicOff size={14} className="text-red-500" />}
-          <span className="text-[10px] font-bold text-slate-600 uppercase tracking-widest">{isSpeaking ? 'Speaking...' : 'Listening'}</span>
+          {isMuted ? (
+            <div className="flex items-center gap-1 text-red-500">
+              <MicOff size={12} />
+              <span className="text-[10px] font-bold uppercase tracking-widest">Muted</span>
+            </div>
+          ) : (
+            <span className="text-[10px] font-bold text-slate-600 uppercase tracking-widest">{isSpeaking ? 'Speaking...' : 'Listening'}</span>
+          )}
         </div>
       </div>
-      {stream && <audio ref={audioRef} autoPlay playsInline />}
+      {stream && !isLocal && <audio ref={audioRef} autoPlay playsInline />}
     </div>
   );
+}
+
+/**
+ * Hook to analyze audio stream and return a volume level 0-100
+ */
+function useAudioLevel(stream, isMuted) {
+  const [level, setLevel] = useState(0);
+
+  useEffect(() => {
+    if (!stream || isMuted) {
+      setLevel(0);
+      return;
+    }
+
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    const analyzer = audioContext.createAnalyser();
+    const source = audioContext.createMediaStreamSource(stream);
+    source.connect(analyzer);
+
+    analyzer.fftSize = 256;
+    const bufferLength = analyzer.frequencyBinCount;
+    const dataArray = new Uint8Array(bufferLength);
+
+    let animationId;
+    const update = () => {
+      analyzer.getByteFrequencyData(dataArray);
+      let sum = 0;
+      for (let i = 0; i < bufferLength; i++) {
+        sum += dataArray[i];
+      }
+      const average = sum / bufferLength;
+      setLevel(Math.min(100, average * 1.5)); // Scale it for visibility
+      animationId = requestAnimationFrame(update);
+    };
+
+    update();
+
+    return () => {
+      cancelAnimationFrame(animationId);
+      audioContext.close();
+    };
+  }, [stream, isMuted]);
+
+  return level;
 }
 
 function ControlBtn({ icon, label, onClick, color, active, primary }) {
