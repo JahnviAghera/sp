@@ -54,8 +54,8 @@ jobs:
         key: ${{ secrets.EC2_SSH_KEY }}
         script: |
           cd speakspace || cd temp_repo
-          # Fix git conflict with local .env
-          git checkout .env || true
+          # Remove untracked .env so git pull can succeed
+          rm -f .env
           git pull origin main
           
           # Show disk space before cleanup
