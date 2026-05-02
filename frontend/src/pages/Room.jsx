@@ -16,7 +16,7 @@ export default function Room() {
   const effectiveUser = user;
 
   const socket = useSocket(code, effectiveUser);
-  const { peers, localStream, permissionStatus, requestPermission } = useWebRTC(socket, code);
+  const { peers, localStream, permissionStatus, requestPermission, reconnectAll } = useWebRTC(socket, code);
 
   const [isMuted, setIsMuted] = useState(false);
   const [muteStates, setMuteStates] = useState({}); // { [socketId]: boolean }
@@ -340,6 +340,8 @@ export default function Room() {
 
           <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-4 px-6 py-4 glass-strong rounded-3xl border border-white/10 shadow-2xl backdrop-blur-xl z-30">
             <ControlBtn active={!isMuted} onClick={toggleMute} icon={isMuted ? <MicOff size={22} /> : <Mic size={22} />} label={isMuted ? "Unmute" : "Mute"} color={isMuted ? "red" : "brand"} />
+            <div className="w-px h-8 bg-white/10 mx-2" />
+            <ControlBtn active={true} onClick={reconnectAll} icon={<RefreshCw size={22} />} label="Fix Audio" color="brand" />
             <div className="w-px h-8 bg-white/10 mx-2" />
             <ControlBtn active={true} onClick={raiseHand} icon={<Hand size={22} />} label="Raise Hand" color="yellow" />
             {isModerator && <ControlBtn active={true} onClick={nextSpeaker} icon={<ChevronRight size={22} />} label="Next Speaker" color="brand" primary />}
