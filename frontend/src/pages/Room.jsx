@@ -287,7 +287,7 @@ export default function Room() {
               />
 
               {Object.entries(directory)
-                .filter(([id]) => id !== socket?.id)
+                .filter(([id, dirUser]) => id !== socket?.id && dirUser?.id !== effectiveUser?.id)
                 .map(([id, dirUser]) => (
                   <ParticipantCard
                     key={id}
