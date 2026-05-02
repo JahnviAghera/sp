@@ -58,6 +58,7 @@ const ResetPassword = () => {
                 label="New Password"
                 type="password"
                 placeholder="••••••••"
+                autoComplete="new-password"
                 {...register('password')}
               />
               {errors.password && <p className="text-red-500 text-[10px] mt-1.5 ml-1 font-bold uppercase tracking-widest">{errors.password.message}</p>}
@@ -68,6 +69,7 @@ const ResetPassword = () => {
                 label="Confirm Password"
                 type="password"
                 placeholder="••••••••"
+                autoComplete="new-password"
                 {...register('confirmPassword')}
               />
               {errors.confirmPassword && <p className="text-red-500 text-[10px] mt-1.5 ml-1 font-bold uppercase tracking-widest">{errors.confirmPassword.message}</p>}

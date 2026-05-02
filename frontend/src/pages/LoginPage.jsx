@@ -56,6 +56,7 @@ const LoginPage = () => {
                 label="Password"
                 type="password"
                 placeholder="••••••••"
+                autoComplete="current-password"
                 {...register('password')}
               />
               {errors.password && <p className="text-red-500 text-[10px] mt-1.5 ml-1 font-bold uppercase tracking-widest">{errors.password.message}</p>}

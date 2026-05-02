@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Mic, MicOff, PhoneOff, MessageSquare, Hand, Sparkles, Clock, Info, Shield, ChevronRight, UserMinus, VolumeX, Share } from 'lucide-react';
+import { Mic, MicOff, PhoneOff, MessageSquare, Hand, Sparkles, Clock, Info, Shield, ChevronRight, UserMinus, VolumeX, Share, RefreshCw, Power } from 'lucide-react';
 import { useSocket } from '../hooks/useSocket';
 import { useWebRTC } from '../hooks/useWebRTC';
 import useAuthStore from '../store/useAuthStore';
