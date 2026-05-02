@@ -59,7 +59,13 @@ export default function Room() {
       }
       if (data.queue) setQueue(data.queue);
       if (data.activeSpeaker) setCurrentSpeaker(data.activeSpeaker);
-      if (data.directory) setDirectory(data.directory);
+      
+      // Merge new user data into directory
+      if (data.directory) {
+        setDirectory(data.directory);
+      } else if (data.socketId && data.user) {
+        setDirectory(prev => ({ ...prev, [data.socketId]: data.user }));
+      }
     });
 
     socket.on('user_left', ({ socketId }) => {

@@ -78,8 +78,23 @@ module.exports = (io, socket) => {
     io.to(roomCode).emit('user_left', { socketId: targetSocketId, kicked: true });
   };
 
+  const onOffer = ({ roomCode, offer, toSocketId }) => {
+    io.to(toSocketId).emit('webrtc_offer', { from: socket.id, offer });
+  };
+
+  const onAnswer = ({ roomCode, answer, toSocketId }) => {
+    io.to(toSocketId).emit('webrtc_answer', { from: socket.id, answer });
+  };
+
+  const onIce = ({ roomCode, candidate, toSocketId }) => {
+    io.to(toSocketId).emit('webrtc_ice', { from: socket.id, candidate });
+  };
+
   socket.on('join_room', joinRoom);
   socket.on('leave_room', leaveRoom);
   socket.on('mute_user', muteUser);
   socket.on('kick_user', kickUser);
+  socket.on('webrtc_offer', onOffer);
+  socket.on('webrtc_answer', onAnswer);
+  socket.on('webrtc_ice', onIce);
 };
