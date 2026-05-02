@@ -89,9 +89,10 @@ exports.getRoomReview = async (req, res) => {
       return res.status(400).json({ message: 'No transcripts found to review' });
     }
     
-    // Check if session already has a review cached
+    // Check if session already has a valid review cached
     let review = session.review;
-    if (!review) {
+    const isBadCachedReview = !review || review.error || !review.sessionSummary;
+    if (isBadCachedReview) {
       await room.populate('moderator');
       const moderatorKey = room.moderator?.geminiApiKey;
       review = await aiService.generateSessionReview(transcripts, moderatorKey);

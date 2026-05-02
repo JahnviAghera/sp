@@ -134,23 +134,37 @@ export default function Room() {
     recognitionRef.current.interimResults = true;
 
     recognitionRef.current.onresult = (event) => {
-      const transcript = Array.from(event.results).map(r => r[0].transcript).join('');
+      let interimTranscript = '';
+      let finalTranscript = '';
 
-      // Display interim results locally immediately
-      setCaptions({ name: effectiveUser.name + ' (You)', text: transcript });
-      if (window.captionTimeout) clearTimeout(window.captionTimeout);
-      window.captionTimeout = setTimeout(() => setCaptions(null), 4000);
+      for (let i = event.resultIndex; i < event.results.length; ++i) {
+        if (event.results[i].isFinal) {
+          finalTranscript += event.results[i][0].transcript;
+        } else {
+          interimTranscript += event.results[i][0].transcript;
+        }
+      }
 
-      // Emit to others only when the phrase is complete
-      if (event.results[event.results.length - 1].isFinal) {
-        socket.emit('speaking_turn', { roomCode: code, transcript, userId: effectiveUser.id });
+      const displayTranscript = finalTranscript || interimTranscript;
+      if (displayTranscript) {
+        setCaptions({ name: effectiveUser.name + ' (You)', text: displayTranscript });
+        if (window.captionTimeout) clearTimeout(window.captionTimeout);
+        window.captionTimeout = setTimeout(() => setCaptions(null), 4000);
+      }
+
+      if (finalTranscript) {
+        socket.emit('speaking_turn', { roomCode: code, transcript: finalTranscript.trim(), userId: effectiveUser.id });
       }
     };
 
     // Automatically restart if it stops unexpectedly while not muted
     recognitionRef.current.onend = () => {
       if (!isMuted) {
-        try { recognitionRef.current.start(); } catch (e) { }
+        setTimeout(() => {
+          if (recognitionRef.current) {
+            try { recognitionRef.current.start(); } catch (e) { }
+          }
+        }, 100);
       }
     };
 
