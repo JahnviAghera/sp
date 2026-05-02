@@ -76,6 +76,11 @@ export default function Room() {
         delete next[socketId];
         return next;
       });
+      setMuteStates(prev => {
+        const next = { ...prev };
+        delete next[socketId];
+        return next;
+      });
     });
 
     // Send the join event now that we are ready
@@ -98,9 +103,13 @@ export default function Room() {
 
     socket.on('force_mute', () => {
       setIsMuted(true);
-      if (localStream) localStream.getAudioTracks().forEach(t => t.enabled = false);
-      // Update our own entry in muteStates
-      setMuteStates(prev => ({ ...prev, [socket.id]: true }));
+      if (localStream) {
+        localStream.getAudioTracks().forEach(t => t.enabled = false);
+      }
+      // Update our own entry in muteStates so others see it
+      if (socket.id) {
+        setMuteStates(prev => ({ ...prev, [socket.id]: true }));
+      }
       toast.error('Moderator muted you');
     });
 
@@ -192,11 +201,17 @@ export default function Room() {
   const toggleMute = () => {
     const nextMute = !isMuted;
     setIsMuted(nextMute);
-    if (localStream) localStream.getAudioTracks().forEach(track => track.enabled = !nextMute);
+    
+    if (localStream) {
+      localStream.getAudioTracks().forEach(track => track.enabled = !nextMute);
+    }
+    
     // Broadcast to all other users so their view updates
-    if (socket) socket.emit('toggle_mute', { roomCode: code, isMuted: nextMute });
-    // Update local entry in muteStates too
-    setMuteStates(prev => ({ ...prev, [socket?.id]: nextMute }));
+    if (socket && socket.id) {
+      socket.emit('toggle_mute', { roomCode: code, isMuted: nextMute });
+      // Update local entry in muteStates too
+      setMuteStates(prev => ({ ...prev, [socket.id]: nextMute }));
+    }
   };
 
   const muteParticipant = (sid) => socket.emit('mute_user', { roomCode: code, targetSocketId: sid });
@@ -266,7 +281,7 @@ export default function Room() {
               />
 
               {Object.entries(directory)
-                .filter(([id]) => id !== socket.id)
+                .filter(([id]) => id !== socket?.id)
                 .map(([id, dirUser]) => (
                   <ParticipantCard
                     key={id}
