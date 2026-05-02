@@ -57,12 +57,28 @@ jobs:
           # Fix git conflict with local .env
           git checkout .env || true
           git pull origin main
-          # Free up disk space (Critical for Free Tier)
+          
+          # Show disk space before cleanup
+          df -h
+          
+          # Stop everything to release locks
+          if command -v docker-compose &> /dev/null; then
+            sudo docker-compose down
+          else
+            sudo docker compose down
+          fi
+          
+          # Aggressive Cleanup
           sudo docker system prune -af --volumes
-          # Launch
+          sudo docker builder prune -af
+          
+          # Launch and Build
           if command -v docker-compose &> /dev/null; then
             sudo docker-compose up --build -d
           else
             sudo docker compose up --build -d
           fi
+          
+          # Show final disk space
+          df -h
 
