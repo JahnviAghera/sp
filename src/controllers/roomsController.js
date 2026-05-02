@@ -49,29 +49,22 @@ exports.listRooms = async (req, res) => {
 
 exports.getMySessions = async (req, res) => {
   try {
-    // Find sessions where this user was a participant summary
-    // Note: This depends on how participantsSummary is populated. 
-    // For now, let's just find sessions for rooms they moderated OR sessions with reviews.
-    // Ideally, we'd have a participants array in Session.
-    
-    const sessions = await Session.find({ review: { $ne: null } })
+    // Find all sessions where this user was recorded as a participant on join
+    const sessions = await Session.find({
+      'participants.userId': req.user.id
+    })
       .populate('room', 'title code')
       .sort({ startedAt: -1 })
-      .limit(20);
-    
-    // Filter sessions where the user is in the review participants list
-    const filtered = sessions.filter(s => {
-      const review = s.review;
-      if (!review || !review.participants) return false;
-      return review.participants.some(p => p.name === req.user.name);
-    });
+      .limit(50)
+      .lean();
 
-    res.json({ sessions: filtered });
+    res.json({ sessions });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Server error' });
   }
 };
+
 
 exports.getRoomReview = async (req, res) => {
   try {

@@ -7,6 +7,11 @@ const SessionSchema = new mongoose.Schema({
   review: { type: mongoose.Schema.Types.Mixed }, // Store Gemini output permanently
   recordings: [{ url: String, uploadedAt: Date }],
   analytics: { type: mongoose.Schema.Types.Mixed },
+  // All users who joined the session (recorded on socket join_room)
+  participants: [{
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    name: { type: String }
+  }],
   participantsSummary: [{
     user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     speakingTime: Number,

@@ -38,6 +38,18 @@ module.exports = (io, socket) => {
     }
     
     const roomState = io.rooms_data[roomCode];
+
+    // Record this user as a session participant (even if they never speak)
+    if (roomState.sessionId && user && user.id) {
+      try {
+        await Session.updateOne(
+          { _id: roomState.sessionId },
+          { $addToSet: { participants: { userId: user.id, name: user.name } } }
+        );
+      } catch (err) {
+        console.error('Failed to record session participant:', err);
+      }
+    }
     
     // Get directory of current users in room
     const directory = {};
