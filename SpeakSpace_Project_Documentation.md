@@ -35,6 +35,7 @@ SpeakSpace addresses the lack of accessible, real-time group discussion (GD) pra
 - Automated post-session participant scorecards with PDF export
 - Leaderboard and historical analytics for longitudinal performance tracking
 - Moderation controls including mute, kick, and speaking queue management
+- Secure password recovery flow with one-time reset tokens
 
 ---
 
@@ -347,6 +348,8 @@ All protected endpoints require a `Bearer` JWT in the `Authorization` header. Ad
 | PUT | /api/auth/profile | JWT | Update name, bio, skills, avatar, API key |
 | PUT | /api/auth/password | JWT | Change password (requires current password) |
 | POST | /api/auth/test-key | JWT | Validate a Gemini API key |
+| POST | /api/auth/forgot-password | None | Request a password reset link |
+| POST | /api/auth/reset-password | None | Reset password using a valid token |
 | GET | /api/auth/google | None | Initiate Google OAuth flow |
 | POST | /api/rooms/create | JWT | Create a new discussion room |
 | GET | /api/rooms | JWT | List all public rooms |
@@ -378,10 +381,12 @@ Socket.IO is used for all real-time communication between the client and server.
 | Server to All | queue_updated | queue array | Updated speaking queue |
 | Client to Server | next_speaker | roomCode | Moderator advances the queue |
 | Server to All | speaking_turn_start | userId, userName | Announce the new active speaker |
-| Client to Server | mute_user | roomCode, targetSocketId | Moderator mutes a participant |
-| Server to Target | force_mute | none | Silences the target client |
 | Client to Server | kick_user | roomCode, targetSocketId | Moderator removes a participant |
 | Server to Target | force_kick | none | Redirects the target to the dashboard |
+| Client to Server | end_session | roomCode | Moderator finalizes session and triggers AI report |
+| Server to All | session_ended | sessionId | Broadcast session completion and redirect to report |
+| Client to Server | toggle_mute | roomCode, isMuted | User broadcasts their mute state to everyone |
+| Server to All | mute_state_changed | socketId, isMuted | Syncs mute status across all participant cards |
 
 ### 8.2 Room Lifecycle State Machine
 
@@ -414,6 +419,8 @@ WebRTC enables peer-to-peer audio transmission without routing media through the
 5. User A responds with an SDP answer
 6. ICE candidates are exchanged until a valid network path is found
 7. Audio streams begin flowing directly between peers
+8. **Identity-Based Stabilization**: Peers are tracked by User ID to ensure that if a connection flickers, "ghost" sessions are automatically cleaned up and a fresh handshake is established.
+9. **Manual Fail-safe**: A "Fix Audio" mechanism allows users to manually re-trigger the handshake if browser autoplay policies or network shifts cause silence.
 
 ```mermaid
 sequenceDiagram
@@ -646,7 +653,7 @@ Tests run against an in-memory MongoDB instance provided by `mongodb-memory-serv
 
 The following describes the complete lifecycle of a user from registration through session completion.
 
-**Step 1 — Registration**: The user creates an account using email and password. A JWT is issued and stored in localStorage for subsequent authenticated requests.
+**Step 1 — Registration**: The user creates an account using email and password. A JWT is issued and stored in localStorage for subsequent authenticated requests. **Password Recovery**: Users can securely reset their credentials via an email-based token flow if they lose access.
 
 **Step 2 — Room Creation**: The user navigates to the dashboard and creates a discussion room. Gemini generates a relevant discussion topic automatically based on the room seed.
 
