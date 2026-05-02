@@ -1,10 +1,11 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const genAI = new GoogleGenerativeAI(GEMINI_API_KEY || 'AIzaSyDOkXWE-tucx3r-lIBx4ybO0UrQTlIWtMU');
+const ACTIVE_KEY = GEMINI_API_KEY || 'AIzaSyDOkXWE-tucx3r-lIBx4ybO0UrQTlIWtMU';
+const genAI = new GoogleGenerativeAI(ACTIVE_KEY);
 
 async function generateTopic({ seed }) {
-  if (!GEMINI_API_KEY) return { topic: seed || 'General Communication' };
+  if (!ACTIVE_KEY) return { topic: seed || 'General Communication' };
   try {
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
     const prompt = `Generate a thought-provoking Group Discussion topic related to: ${seed || 'Professional Skills'}. Return only the topic title.`;
@@ -17,7 +18,7 @@ async function generateTopic({ seed }) {
 }
 
 async function analyzeSpeech({ transcript, userName }) {
-  if (!GEMINI_API_KEY) return { summary: 'No AI key configured', fluency: 0, confidence: 0 };
+  if (!ACTIVE_KEY) return { summary: 'No AI key configured', fluency: 0, confidence: 0 };
   try {
     const model = genAI.getGenerativeModel({ 
       model: "gemini-1.5-flash",
@@ -47,7 +48,7 @@ async function analyzeSpeech({ transcript, userName }) {
 }
 
 async function generateSessionReview(transcripts) {
-  if (!GEMINI_API_KEY) return { error: 'Gemini API key missing' };
+  if (!ACTIVE_KEY) return { error: 'Gemini API key missing' };
   try {
     const model = genAI.getGenerativeModel({ 
       model: "gemini-1.5-flash",
