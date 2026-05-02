@@ -39,7 +39,6 @@ jobs:
       env:
         VITE_API_URL: ${{ secrets.VITE_API_URL }}
 
-
   deploy:
     needs: build-and-test
     runs-on: ubuntu-latest
@@ -47,84 +46,112 @@ jobs:
 
     steps:
     - name: Deploy to EC2
-      uses: appleboy/ssh-action@master
+      uses: appleboy/ssh-action@v1.0.3
       with:
         host: ${{ secrets.EC2_HOST }}
         username: ubuntu
         key: ${{ secrets.EC2_SSH_KEY }}
         script: |
-          cd speakspace || cd temp_repo
-          rm -f .env
-          git pull origin main
-          
-          # Stop and cleanup
-          sudo docker compose down
-          sudo docker system prune -af --volumes
-          
-          # Launch with Safe Config (Port 80)
+          # --- Navigate to project directory (fail loudly if missing) ---
+          if [ -d "$HOME/speakspace" ]; then
+            cd "$HOME/speakspace"
+          elif [ -d "$HOME/temp_repo" ]; then
+            cd "$HOME/temp_repo"
+          else
+            echo "ERROR: Project directory not found in $HOME"
+            ls -la "$HOME"
+            exit 1
+          fi
+
+          echo "Working in: $(pwd)"
+
+          # --- Pull latest code ---
+          git fetch origin main
+          git reset --hard origin/main
+
+          # --- Stop and clean old containers ---
+          sudo docker compose down --remove-orphans || true
+          sudo docker system prune -af --volumes || true
+
+          # --- Build and start all services ---
           sudo docker compose up --build -d
-          
-          # 1. Request SSL Certificate if it doesn't exist
-          if [ ! -f "./certbot/conf/live/3.88.239.189.nip.io/fullchain.pem" ]; then
-            echo "Requesting SSL Certificate..."
+
+          # --- Wait for containers to be healthy ---
+          sleep 10
+          sudo docker compose ps
+
+          # --- SSL Certificate (only on first deploy) ---
+          CERT_PATH="./certbot/conf/live/3.88.239.189.nip.io/fullchain.pem"
+          if [ ! -f "$CERT_PATH" ]; then
+            echo "Requesting SSL certificate..."
             sudo docker run --rm \
               -v "$(pwd)/certbot/conf:/etc/letsencrypt" \
               -v "$(pwd)/certbot/www:/var/www/certbot" \
-              certbot/certbot certonly --webroot -w /var/www/certbot \
-              -d 3.88.239.189.nip.io --email jahnu@example.com --agree-tos --no-eff-email
+              certbot/certbot certonly --webroot \
+              -w /var/www/certbot \
+              -d 3.88.239.189.nip.io \
+              --email jahnu@example.com \
+              --agree-tos \
+              --no-eff-email \
+              --non-interactive
+          else
+            echo "SSL certificate already exists, skipping."
           fi
 
-          # 2. Update Nginx to use SSL
-          cat <<EOF > nginx.conf
-          upstream speakspace_backend {
-              least_conn;
-              server backend:4000;
-              server backend:4000;
-              keepalive 32;
-          }
+          # --- Write production nginx.conf ---
+          cat > nginx.conf << 'NGINXEOF'
+upstream speakspace_backend {
+    least_conn;
+    server backend:4000;
+    keepalive 32;
+}
 
-          server {
-              listen 80;
-              server_name 3.88.239.189.nip.io;
-              location /.well-known/acme-challenge/ { root /var/www/certbot; }
-              location / { return 301 https://\$host\$request_uri; }
-          }
+server {
+    listen 80;
+    server_name 3.88.239.189.nip.io;
+    location /.well-known/acme-challenge/ { root /var/www/certbot; }
+    location / { return 301 https://$host$request_uri; }
+}
 
-          server {
-              listen 443 ssl;
-              server_name 3.88.239.189.nip.io;
-              ssl_certificate /etc/letsencrypt/live/3.88.239.189.nip.io/fullchain.pem;
-              ssl_certificate_key /etc/letsencrypt/live/3.88.239.189.nip.io/privkey.pem;
-              ssl_protocols TLSv1.2 TLSv1.3;
-              ssl_ciphers HIGH:!aNULL:!MD5;
+server {
+    listen 443 ssl;
+    server_name 3.88.239.189.nip.io;
+    ssl_certificate /etc/letsencrypt/live/3.88.239.189.nip.io/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/3.88.239.189.nip.io/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers HIGH:!aNULL:!MD5;
 
-              location / {
-                  root /usr/share/nginx/html;
-                  try_files \$uri \$uri/ /index.html;
-              }
+    location / {
+        root /usr/share/nginx/html;
+        try_files $uri $uri/ /index.html;
+    }
 
-              location /api/ {
-                  proxy_pass http://speakspace_backend;
-                  proxy_http_version 1.1;
-                  proxy_set_header Upgrade \$http_upgrade;
-                  proxy_set_header Connection 'upgrade';
-                  proxy_set_header Host \$host;
-                  proxy_set_header X-Forwarded-Proto \$scheme;
-              }
+    location /api/ {
+        proxy_pass http://speakspace_backend;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 60s;
+    }
 
-              location /socket.io/ {
-                  proxy_pass http://speakspace_backend;
-                  proxy_http_version 1.1;
-                  proxy_set_header Upgrade \$http_upgrade;
-                  proxy_set_header Connection "upgrade";
-                  proxy_set_header Host \$host;
-              }
-          }
-          EOF
-          
-          # Remove the leading whitespace from nginx.conf (since we indented for YAML)
-          sed -i 's/^[[:space:]]\{10\}//' nginx.conf
-          
-          # 3. Restart Frontend to apply SSL
+    location /socket.io/ {
+        proxy_pass http://speakspace_backend;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_read_timeout 3600s;
+    }
+}
+NGINXEOF
+
+          # --- Restart frontend (Nginx) with new config ---
           sudo docker compose up -d frontend
+
+          # --- Health check ---
+          sleep 5
+          sudo docker compose ps
           df -h
+          echo "Deployment complete."

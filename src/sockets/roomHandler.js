@@ -33,7 +33,8 @@ module.exports = (io, socket) => {
         duration: 20 * 60 * 1000, 
         activeSpeaker: null,
         moderatorId: room?.moderator?.toString() || user.id,
-        sessionId 
+        sessionId,
+        muteStates: {} // Track mute status per socketId
       };
     }
     
@@ -70,17 +71,34 @@ module.exports = (io, socket) => {
       topic: roomState.topic,
       startTime: roomState.startTime,
       duration: roomState.duration,
-      activeSpeaker: roomState.activeSpeaker
+      activeSpeaker: roomState.activeSpeaker,
+      muteStates: roomState.muteStates
     });
   };
 
   const leaveRoom = ({ roomCode, user }) => {
     socket.leave(roomCode);
+    
+    // Cleanup mute state for this socket
+    const roomState = io.rooms_data?.[roomCode];
+    if (roomState && roomState.muteStates) {
+      delete roomState.muteStates[socket.id];
+    }
+
     io.to(roomCode).emit('user_left', { user, socketId: socket.id });
   };
 
   const muteUser = ({ roomCode, targetSocketId }) => {
     io.to(targetSocketId).emit('force_mute');
+    
+    // Update server state
+    const roomState = io.rooms_data[roomCode];
+    if (roomState) {
+      roomState.muteStates[targetSocketId] = true;
+    }
+
+    // Broadcast mute state to everyone so all cards update
+    io.to(roomCode).emit('mute_state_changed', { socketId: targetSocketId, isMuted: true });
     io.to(roomCode).emit('moderator_action', { action: 'mute', target: targetSocketId });
   };
 
@@ -147,10 +165,43 @@ module.exports = (io, socket) => {
     }
   };
 
+  // Handle abrupt disconnects (tab close)
+  socket.on('disconnecting', () => {
+    for (const roomCode of socket.rooms) {
+      if (roomCode !== socket.id) {
+        const roomState = io.rooms_data?.[roomCode];
+        if (roomState) {
+          // Remove from queue
+          roomState.queue = roomState.queue.filter(q => q.socketId !== socket.id);
+          // Remove from mute states
+          if (roomState.muteStates) delete roomState.muteStates[socket.id];
+          // Clear active speaker if it was them
+          if (roomState.activeSpeaker?.socketId === socket.id) {
+            roomState.activeSpeaker = null;
+          }
+          
+          io.to(roomCode).emit('user_left', { socketId: socket.id });
+          io.to(roomCode).emit('queue_updated', roomState.queue);
+          io.to(roomCode).emit('speaking_turn_start', null);
+        }
+      }
+    }
+  });
+
+  // User self-toggled their own mute — broadcast state to room
+  const onToggleMute = ({ roomCode, isMuted }) => {
+    const roomState = io.rooms_data[roomCode];
+    if (roomState) {
+      roomState.muteStates[socket.id] = isMuted;
+    }
+    io.to(roomCode).emit('mute_state_changed', { socketId: socket.id, isMuted });
+  };
+
   socket.on('join_room', joinRoom);
   socket.on('leave_room', leaveRoom);
   socket.on('mute_user', muteUser);
   socket.on('kick_user', kickUser);
+  socket.on('toggle_mute', onToggleMute);
   socket.on('webrtc_offer', onOffer);
   socket.on('webrtc_answer', onAnswer);
   socket.on('webrtc_ice', onIce);

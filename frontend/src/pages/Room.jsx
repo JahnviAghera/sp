@@ -19,6 +19,7 @@ export default function Room() {
   const { peers, localStream, permissionStatus, requestPermission } = useWebRTC(socket, code);
 
   const [isMuted, setIsMuted] = useState(false);
+  const [muteStates, setMuteStates] = useState({}); // { [socketId]: boolean }
   const [chatOpen, setChatOpen] = useState(true);
   const [messages, setMessages] = useState([]);
   const [directory, setDirectory] = useState({});
@@ -59,6 +60,7 @@ export default function Room() {
       }
       if (data.queue) setQueue(data.queue);
       if (data.activeSpeaker) setCurrentSpeaker(data.activeSpeaker);
+      if (data.muteStates) setMuteStates(data.muteStates);
       
       // Merge new user data into directory
       if (data.directory) {
@@ -97,7 +99,13 @@ export default function Room() {
     socket.on('force_mute', () => {
       setIsMuted(true);
       if (localStream) localStream.getAudioTracks().forEach(t => t.enabled = false);
+      // Update our own entry in muteStates
+      setMuteStates(prev => ({ ...prev, [socket.id]: true }));
       toast.error('Moderator muted you');
+    });
+
+    socket.on('mute_state_changed', ({ socketId, isMuted: muted }) => {
+      setMuteStates(prev => ({ ...prev, [socketId]: muted }));
     });
 
     socket.on('force_kick', () => {
@@ -119,6 +127,7 @@ export default function Room() {
       socket.off('speaking_turn_start');
       socket.off('speaking_turn');
       socket.off('force_mute');
+      socket.off('mute_state_changed');
       socket.off('force_kick');
       socket.off('moderator_action');
     };
@@ -183,7 +192,11 @@ export default function Room() {
   const toggleMute = () => {
     const nextMute = !isMuted;
     setIsMuted(nextMute);
-    if (localStream) localStream.getAudioTracks().forEach(track => track.enabled = isMuted);
+    if (localStream) localStream.getAudioTracks().forEach(track => track.enabled = !nextMute);
+    // Broadcast to all other users so their view updates
+    if (socket) socket.emit('toggle_mute', { roomCode: code, isMuted: nextMute });
+    // Update local entry in muteStates too
+    setMuteStates(prev => ({ ...prev, [socket?.id]: nextMute }));
   };
 
   const muteParticipant = (sid) => socket.emit('mute_user', { roomCode: code, targetSocketId: sid });
@@ -253,12 +266,13 @@ export default function Room() {
               />
 
               {Object.entries(directory)
-                .filter(([id, dirUser]) => id !== socket.id)
+                .filter(([id]) => id !== socket.id)
                 .map(([id, dirUser]) => (
                   <ParticipantCard
                     key={id}
                     name={dirUser.name || `User_${id.substr(0, 4)}`}
                     isSpeaking={currentSpeaker?.socketId === id}
+                    isMuted={!!muteStates[id]}
                     stream={peers[id]?.stream}
                     showControls={isModerator}
                     onMute={() => muteParticipant(id)}

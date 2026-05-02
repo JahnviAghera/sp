@@ -144,7 +144,18 @@ export default function Dashboard() {
         {/* Sidebar */}
         <aside className="space-y-10">
           <div className="grid grid-cols-2 gap-6 mb-2">
-            <QuickStat label="Avg. Score" val={pastSessions.length > 0 ? Math.round(pastSessions.reduce((acc, s) => acc + (s.review.participants.find(p => p.name === user.name)?.overallScore || 0), 0) / pastSessions.length) : 'N/A'} />
+            <QuickStat
+              label="Avg. Score"
+              val={(() => {
+                const scored = pastSessions.filter(s => s.review?.participants);
+                if (!scored.length) return 'N/A';
+                const total = scored.reduce((acc, s) => {
+                  const p = s.review.participants.find(p => p.name === user?.name);
+                  return acc + (p?.overallScore || 0);
+                }, 0);
+                return Math.round(total / scored.length);
+              })()}
+            />
             <QuickStat label="Sessions" val={pastSessions.length} />
           </div>
 
@@ -156,25 +167,51 @@ export default function Dashboard() {
             </h3>
             <div className="space-y-3">
               {pastSessions.length > 0 ? pastSessions.slice(0, 5).map((session, i) => {
-                const myResult = session.review.participants.find(p => p.name === user.name);
+                const myResult = session.review?.participants?.find(p => p.name === user?.name);
+                const hasReport = !!session.review?.sessionSummary;
                 return (
-                  <div key={i} onClick={() => navigate(`/report/${session.room.code}`)} className="p-4 bg-dark-800 rounded-2xl border border-white/5 hover:border-brand-500/30 transition-all cursor-pointer group flex items-center justify-between">
+                  <div
+                    key={i}
+                    onClick={() => hasReport && navigate(`/report/${session.room?.code}`)}
+                    className={`p-4 bg-dark-800 rounded-2xl border border-white/5 transition-all flex items-center justify-between ${
+                      hasReport ? 'hover:border-brand-500/30 cursor-pointer group' : 'opacity-70'
+                    }`}
+                  >
                     <div className="flex items-center gap-4">
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-xs ${myResult?.overallScore >= 80 ? 'bg-emerald-500/10 text-emerald-500' : 'bg-brand-500/10 text-brand-400'}`}>
-                        {myResult?.overallScore || '??'}
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-xs ${
+                        myResult?.overallScore >= 80
+                          ? 'bg-emerald-500/10 text-emerald-500'
+                          : myResult?.overallScore
+                          ? 'bg-brand-500/10 text-brand-400'
+                          : 'bg-white/5 text-slate-500'
+                      }`}>
+                        {myResult?.overallScore || '—'}
                       </div>
                       <div>
-                        <p className="text-sm font-bold text-white group-hover:text-brand-400 transition-colors">{session.room.title}</p>
-                        <p className="text-[10px] text-slate-500 font-medium uppercase">{new Date(session.startedAt).toLocaleDateString()}</p>
+                        <p className="text-sm font-bold text-white group-hover:text-brand-400 transition-colors">
+                          {session.room?.title || 'Unknown Room'}
+                        </p>
+                        <p className="text-[10px] text-slate-500 font-medium uppercase">
+                          {new Date(session.startedAt).toLocaleDateString()}
+                          {!hasReport && <span className="ml-2 text-slate-600">· No report yet</span>}
+                        </p>
                       </div>
                     </div>
-                    <ChevronRight size={16} className="text-slate-600 group-hover:translate-x-1 transition-transform" />
+                    {hasReport && <ChevronRight size={16} className="text-slate-600 group-hover:translate-x-1 transition-transform" />}
                   </div>
                 );
               }) : (
                 <div className="p-6 bg-dark-800/50 rounded-2xl border border-dashed border-white/10 text-center">
-                  <p className="text-xs text-slate-600 italic">No reports yet.</p>
+                  <p className="text-xs text-slate-600 italic">No sessions joined yet.</p>
                 </div>
+              )}
+              {pastSessions.length > 5 && (
+                <button
+                  onClick={() => navigate('/history')}
+                  className="w-full py-2 text-xs text-brand-400 font-bold uppercase tracking-widest hover:underline"
+                >
+                  View all {pastSessions.length} sessions
+                </button>
               )}
             </div>
           </section>

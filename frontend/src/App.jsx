@@ -18,6 +18,7 @@ const AnalyticsPage = lazy(() => import('./pages/AnalyticsPage'));
 const LeaderboardPage = lazy(() => import('./pages/Leaderboard')); // Remote has Leaderboard.jsx
 const AdminPage = lazy(() => import('./pages/AdminPanel')); // Remote has AdminPanel.jsx
 const SessionReport = lazy(() => import('./pages/SessionReport'));
+const SessionHistory = lazy(() => import('./pages/SessionHistory'));
 
 function App() {
   return (
@@ -39,6 +40,7 @@ function App() {
               <Route path="/analytics" element={<ProtectedRoute><AnalyticsPage /></ProtectedRoute>} />
               <Route path="/leaderboard" element={<ProtectedRoute><LeaderboardPage /></ProtectedRoute>} />
               <Route path="/admin" element={<ProtectedRoute adminOnly><AdminPage /></ProtectedRoute>} />
+              <Route path="/history" element={<ProtectedRoute><SessionHistory /></ProtectedRoute>} />
             </Route>
           </Routes>
         </Suspense>
