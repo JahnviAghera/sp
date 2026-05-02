@@ -55,5 +55,9 @@ jobs:
         script: |
           cd speakspace || cd temp_repo
           git pull origin main
-          sudo docker-compose up --build -d
+          if command -v docker-compose &> /dev/null; then
+            sudo docker-compose up --build -d
+          else
+            sudo docker compose up --build -d
+          fi
 
