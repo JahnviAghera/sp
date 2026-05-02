@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { User, Mail, Award, BookOpen, Clock, Activity, Edit2, Save, ArrowLeft } from 'lucide-react';
+import { User, Mail, Award, BookOpen, Clock, Activity, Edit2, Save, ArrowLeft, Key, CheckCircle, XCircle, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { authAPI } from '../services/api';
 import useAuthStore from '../store/useAuthStore';
@@ -9,8 +9,9 @@ export default function Profile() {
   const { user: storeUser, fetchProfile: updateStoreProfile } = useAuthStore();
   const [profile, setProfile] = useState(null);
   const [editing, setEditing] = useState(false);
-  const [formData, setFormData] = useState({ name: '', bio: '', skills: '' });
+  const [formData, setFormData] = useState({ name: '', bio: '', skills: '', geminiApiKey: '' });
   const [loading, setLoading] = useState(true);
+  const [testStatus, setTestStatus] = useState({ status: 'idle', message: '' }); // idle, testing, success, error
 
   useEffect(() => {
     const fetchProfileData = async () => {
@@ -21,7 +22,8 @@ export default function Profile() {
         setFormData({
           name: userData.name,
           bio: userData.bio || '',
-          skills: (userData.skills || []).join(', ')
+          skills: (userData.skills || []).join(', '),
+          geminiApiKey: userData.geminiApiKey || ''
         });
       } catch (err) {
         console.error('Failed to fetch profile', err);
@@ -42,9 +44,24 @@ export default function Profile() {
       await updateStoreProfile(); // Update global state
       setProfile({ ...profile, ...updated });
       setEditing(false);
+      setTestStatus({ status: 'idle', message: '' });
     } catch (err) {
       console.error('Failed to update profile', err);
       setEditing(false);
+    }
+  };
+
+  const handleTestKey = async () => {
+    if (!formData.geminiApiKey) {
+      setTestStatus({ status: 'error', message: 'Please enter a key first' });
+      return;
+    }
+    setTestStatus({ status: 'testing', message: 'Testing connection...' });
+    try {
+      const res = await authAPI.testApiKey({ apiKey: formData.geminiApiKey });
+      setTestStatus({ status: 'success', message: res.data.message });
+    } catch (err) {
+      setTestStatus({ status: 'error', message: err.response?.data?.message || 'Connection failed' });
     }
   };
 
@@ -146,6 +163,52 @@ export default function Profile() {
           </div>
 
           <div className="bg-dark-800 p-8 rounded-3xl border border-dark-700">
+            <h3 className="text-xl font-bold mb-6 flex items-center">
+              <Key className="text-brand-500 mr-3" size={20} />
+              AI Integrations
+            </h3>
+            {editing ? (
+              <div className="space-y-4">
+                <div>
+                  <label className="text-[10px] font-bold text-gray-500 uppercase">Gemini API Key</label>
+                  <div className="flex flex-col sm:flex-row gap-3 mt-1">
+                    <input 
+                      type="password"
+                      className="input-field flex-grow" 
+                      placeholder="AIzaSy..."
+                      value={formData.geminiApiKey} 
+                      onChange={e => setFormData({...formData, geminiApiKey: e.target.value})} 
+                    />
+                    <button 
+                      onClick={handleTestKey}
+                      disabled={testStatus.status === 'testing'}
+                      className="px-4 py-2 bg-dark-700 hover:bg-dark-600 text-sm font-bold rounded-xl transition-colors flex items-center justify-center min-w-[120px]"
+                    >
+                      {testStatus.status === 'testing' ? <Loader2 size={16} className="animate-spin" /> : 'Test Connection'}
+                    </button>
+                  </div>
+                  {testStatus.status === 'success' && <p className="text-xs text-green-400 mt-2 flex items-center gap-1"><CheckCircle size={12}/> {testStatus.message}</p>}
+                  {testStatus.status === 'error' && <p className="text-xs text-red-400 mt-2 flex items-center gap-1"><XCircle size={12}/> {testStatus.message}</p>}
+                  <p className="text-[10px] text-gray-500 mt-2">Your key is stored securely in the database and used for your sessions.</p>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="flex items-center gap-3 p-4 bg-dark-900 rounded-2xl border border-dark-700">
+                  <div className={`w-3 h-3 rounded-full ${profile.geminiApiKey ? 'bg-green-500' : 'bg-red-500'}`} />
+                  <div>
+                    <p className="text-sm font-bold text-white">Google Gemini API</p>
+                    <p className="text-xs text-gray-500">
+                      {profile.geminiApiKey ? 'Custom API key configured' : 'Using platform default (Subject to limits)'}
+                    </p>
+                  </div>
+                </div>
+                <p className="text-xs text-gray-400 italic">Click "Edit Profile" to add or update your personal API key.</p>
+              </div>
+            )}
+          </div>
+
+          <div className="bg-dark-800 p-8 rounded-3xl border border-dark-700">
             <h3 className="text-xl font-bold mb-6">Recent Session History</h3>
             {(profile.recentSessions || []).length > 0 ? (
               <div className="space-y-4">
@@ -182,21 +245,6 @@ function StatRow({ icon, label, value }) {
         <span className="text-sm">{label}</span>
       </div>
       <span className="font-bold text-white">{value}</span>
-    </div>
-  );
-}
-
-function HistoryItem({ title, date, score }) {
-  return (
-    <div className="flex items-center justify-between p-4 bg-dark-900 rounded-2xl border border-dark-700 hover:border-brand-500/30 transition-colors">
-      <div>
-        <h4 className="font-bold text-sm">{title}</h4>
-        <p className="text-[10px] text-gray-500">{date}</p>
-      </div>
-      <div className="text-right">
-        <p className="text-xs font-bold text-brand-500">Score: {score}</p>
-        <button className="text-[10px] text-gray-500 underline hover:text-brand-500">View Transcript</button>
-      </div>
     </div>
   );
 }
