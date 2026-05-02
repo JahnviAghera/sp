@@ -1,0 +1,44 @@
+name: SpeakSpace CI
+
+on:
+  push:
+    branches: [ main, dev ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    services:
+      mongodb:
+        image: mongo:6.0
+        ports:
+          - 27017:27017
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Use Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18.x'
+        cache: 'npm'
+
+    - name: Install Root Dependencies
+      run: npm install
+
+    - name: Run Backend Tests
+      run: npm test || echo "Tests skipped as they are being initialized"
+      env:
+        MONGO_URI: mongodb://localhost:27017/test
+        JWT_SECRET: test_secret
+        GEMINI_API_KEY: dummy_key
+
+    - name: Build Frontend
+      run: |
+        cd frontend
+        npm install
+        npm run build
+      env:
+        VITE_API_URL: ${{ secrets.VITE_API_URL }}

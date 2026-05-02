@@ -1,5 +1,4 @@
 const Schedule = require('../models/Schedule');
-const Notification = require('../models/Notification');
 
 exports.createSchedule = async (req, res) => {
   try {
@@ -18,31 +17,27 @@ exports.createSchedule = async (req, res) => {
 
 exports.getUpcomingSchedules = async (req, res) => {
   try {
-    const schedules = await Schedule.find({
-      $or: [{ creator: req.user.id }, { participants: req.user.id }],
-      startTime: { $gte: new Date() }
-    }).sort({ startTime: 1 });
+    const schedules = await Schedule.find({ startTime: { $gt: new Date() } })
+      .sort({ startTime: 1 })
+      .populate('creator', 'name')
+      .lean();
     res.json({ schedules });
   } catch (err) {
     res.status(500).json({ message: 'Server error' });
   }
 };
 
-exports.getNotifications = async (req, res) => {
+exports.joinSchedule = async (req, res) => {
   try {
-    const notifications = await Notification.find({ recipient: req.user.id })
-      .sort({ createdAt: -1 })
-      .limit(20);
-    res.json({ notifications });
-  } catch (err) {
-    res.status(500).json({ message: 'Server error' });
-  }
-};
-
-exports.markAsRead = async (req, res) => {
-  try {
-    await Notification.updateMany({ recipient: req.user.id, isRead: false }, { isRead: true });
-    res.json({ ok: true });
+    const { scheduleId } = req.body;
+    const schedule = await Schedule.findById(scheduleId);
+    if (!schedule) return res.status(404).json({ message: 'Schedule not found' });
+    
+    if (!schedule.participants.includes(req.user.id)) {
+      schedule.participants.push(req.user.id);
+      await schedule.save();
+    }
+    res.json({ message: 'Joined schedule successfully' });
   } catch (err) {
     res.status(500).json({ message: 'Server error' });
   }

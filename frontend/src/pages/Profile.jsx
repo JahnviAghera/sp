@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { User, Mail, Award, BookOpen, Clock, Activity, Edit2, Save, ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { authAPI } from '../services/api';
-import useAuthStore from '../store/authStore';
+import useAuthStore from '../store/useAuthStore';
 
 export default function Profile() {
   const navigate = useNavigate();

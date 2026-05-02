@@ -1,10 +1,10 @@
 import React from 'react';
 import Button from '../ui/Button';
-import { useAuthStore } from '../../store/useAuthStore';
+import useAuthStore from '../../store/useAuthStore';
 
 const GoogleLoginButton = () => {
   const handleGoogleLogin = () => {
-    window.location.href = 'http://localhost:5000/api/auth/google';
+    window.location.href = 'http://localhost:4000/api/auth/google';
   };
 
   return (

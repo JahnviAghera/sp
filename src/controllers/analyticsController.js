@@ -1,21 +1,37 @@
 const Analytics = require('../models/Analytics');
-const User = require('../models/User');
 
 exports.getUserAnalytics = async (req, res) => {
   try {
-    const analytics = await Analytics.find({ user: req.user.id }).populate('session');
+    const userId = req.user.id;
+    const history = await Analytics.find({ user: userId })
+      .sort({ createdAt: -1 })
+      .limit(20)
+      .lean();
     
-    // Aggregation for quick stats
-    const totalSpeakingTime = analytics.reduce((acc, curr) => acc + curr.speakingTimeSecs, 0);
-    const avgFluency = analytics.length ? analytics.reduce((acc, curr) => acc + curr.metrics.fluency, 0) / analytics.length : 0;
-    
-    res.json({
-      analytics,
-      stats: {
-        totalSessions: analytics.length,
-        totalSpeakingTime,
-        avgFluency: avgFluency.toFixed(2)
+    // Aggregated stats
+    const totalSessions = await Analytics.countDocuments({ user: userId });
+    const averageMetrics = await Analytics.aggregate([
+      { $match: { user: req.user._id } }, // Match by ObjectId
+      {
+        $group: {
+          _id: null,
+          avgFluency: { $avg: '$metrics.fluency' },
+          avgConfidence: { $avg: '$metrics.confidence' },
+          avgRelevance: { $avg: '$metrics.relevance' },
+          totalSpeakingTime: { $sum: '$speakingTimeSecs' }
+        }
       }
+    ]);
+
+    res.json({
+      history,
+      summary: averageMetrics[0] || {
+        avgFluency: 0,
+        avgConfidence: 0,
+        avgRelevance: 0,
+        totalSpeakingTime: 0
+      },
+      totalSessions
     });
   } catch (err) {
     console.error(err);
@@ -25,11 +41,34 @@ exports.getUserAnalytics = async (req, res) => {
 
 exports.getLeaderboard = async (req, res) => {
   try {
-    const users = await User.find({})
-      .sort({ 'stats.totalSpeakingTime': -1, 'stats.sessionsParticipated': -1 })
-      .limit(10)
-      .select('name avatarUrl stats');
-    res.json({ leaderboard: users });
+    const leaderboard = await Analytics.aggregate([
+      {
+        $group: {
+          _id: '$user',
+          overallScore: { $avg: '$metrics.overallScore' },
+          sessionsCount: { $sum: 1 }
+        }
+      },
+      { $sort: { overallScore: -1 } },
+      { $limit: 10 },
+      {
+        $lookup: {
+          from: 'users',
+          localField: '_id',
+          foreignField: '_id',
+          as: 'userInfo'
+        }
+      },
+      { $unwind: '$userInfo' },
+      {
+        $project: {
+          name: '$userInfo.name',
+          score: '$overallScore',
+          sessions: '$sessionsCount'
+        }
+      }
+    ]);
+    res.json({ leaderboard });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Server error' });

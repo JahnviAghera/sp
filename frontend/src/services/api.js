@@ -11,9 +11,17 @@ const api = axios.create({
 
 // Add interceptor to include token in requests
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+  try {
+    const authStorageStr = localStorage.getItem('auth-storage');
+    if (authStorageStr) {
+      const authStorage = JSON.parse(authStorageStr);
+      const token = authStorage?.state?.token;
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+    }
+  } catch (error) {
+    console.error('Error parsing token from storage:', error);
   }
   return config;
 });
@@ -27,7 +35,7 @@ export const authAPI = {
 
 export const roomAPI = {
   getRooms: () => api.get('/rooms'),
-  createRoom: (roomData) => api.post('/rooms', roomData),
+  createRoom: (roomData) => api.post('/rooms/create', roomData),
   getRoomById: (id) => api.get(`/rooms/${id}`),
 };
 

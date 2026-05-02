@@ -22,21 +22,20 @@ const AppLayout = () => {
             <Link to="/dashboard" className="text-gray-400 hover:text-white transition-colors">Dashboard</Link>
             <Link to="/leaderboard" className="text-gray-400 hover:text-white transition-colors">Leaderboard</Link>
             <Link to="/analytics" className="text-gray-400 hover:text-white transition-colors">Analytics</Link>
-            <Link to="/admin" className="text-gray-400 hover:text-white transition-colors">Admin</Link>
             <Link to="/profile" className="text-gray-400 hover:text-white transition-colors">Profile</Link>
           </nav>
         </div>
         <div className="flex items-center space-x-4">
-           {user ? (
-             <div className="flex items-center space-x-3">
-               <Link to="/profile" className="w-8 h-8 bg-brand-500/20 rounded-full border border-brand-500/30 flex items-center justify-center text-xs font-bold text-brand-500">
-                 {user.name?.charAt(0) || 'U'}
-               </Link>
-               <button onClick={handleLogout} className="text-xs text-gray-500 hover:text-red-500 transition-colors">Logout</button>
-             </div>
-           ) : (
-             <Link to="/login" className="text-sm font-bold text-brand-500">Login</Link>
-           )}
+          {user ? (
+            <div className="flex items-center space-x-3">
+              <Link to="/profile" className="w-8 h-8 bg-brand-500/20 rounded-full border border-brand-500/30 flex items-center justify-center text-xs font-bold text-brand-500">
+                {user.name?.charAt(0) || 'U'}
+              </Link>
+              <button onClick={handleLogout} className="text-xs text-gray-500 hover:text-red-500 transition-colors">Logout</button>
+            </div>
+          ) : (
+            <Link to="/login" className="text-sm font-bold text-brand-500">Login</Link>
+          )}
         </div>
       </header>
       <main className="flex-grow flex flex-col">

@@ -4,6 +4,7 @@ const SessionSchema = new mongoose.Schema({
   room: { type: mongoose.Schema.Types.ObjectId, ref: 'Room', required: true },
   startedAt: { type: Date, default: Date.now },
   endedAt: { type: Date },
+  review: { type: mongoose.Schema.Types.Mixed }, // Store Gemini output permanently
   recordings: [{ url: String, uploadedAt: Date }],
   analytics: { type: mongoose.Schema.Types.Mixed },
   participantsSummary: [{

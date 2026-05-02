@@ -16,6 +16,7 @@ const ProfilePage = lazy(() => import('./pages/Profile')); // Remote has Profile
 const AnalyticsPage = lazy(() => import('./pages/AnalyticsPage'));
 const LeaderboardPage = lazy(() => import('./pages/Leaderboard')); // Remote has Leaderboard.jsx
 const AdminPage = lazy(() => import('./pages/AdminPanel')); // Remote has AdminPanel.jsx
+const SessionReport = lazy(() => import('./pages/SessionReport'));
 
 function App() {
   return (
@@ -29,7 +30,9 @@ function App() {
             <Route element={<AppLayout />}>
               <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
               <Route path="/rooms/new" element={<ProtectedRoute><CreateRoomPage /></ProtectedRoute>} />
-              <Route path="/rooms/:id" element={<ProtectedRoute><RoomPage /></ProtectedRoute>} />
+              <Route path="/rooms/:code" element={<ProtectedRoute><RoomPage /></ProtectedRoute>} />
+              <Route path="/room/:code" element={<ProtectedRoute><RoomPage /></ProtectedRoute>} />
+              <Route path="/report/:code" element={<ProtectedRoute><SessionReport /></ProtectedRoute>} />
               <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
               <Route path="/analytics" element={<ProtectedRoute><AnalyticsPage /></ProtectedRoute>} />
               <Route path="/leaderboard" element={<ProtectedRoute><LeaderboardPage /></ProtectedRoute>} />

@@ -1,73 +1,32 @@
 import { useEffect, useRef, useState } from 'react';
 
-const pcConfig = {
-  iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
-};
-
 export const useWebRTC = (socket, roomCode) => {
-  const [peers, setPeers] = useState({}); // { socketId: { stream, name } }
-  const pcs = useRef({}); // { socketId: RTCPeerConnection }
-  const localStream = useRef(null);
+  const [peers, setPeers] = useState({});
+  const [localStream, setLocalStream] = useState(null);
+  const pcs = useRef({});
+
+  const localStreamRef = useRef(null);
 
   useEffect(() => {
     if (!socket) return;
 
-    const initLocalStream = async () => {
-      try {
-        localStream.current = await navigator.mediaDevices.getUserMedia({ audio: true });
-        
-        // When a new user joins, send them an offer
-        socket.on('user_joined', async ({ user, socketId }) => {
-          if (socketId === socket.id) return;
-          await createPeerConnection(socketId, true);
-        });
+    const createPeerConnection = async (targetSocketId, isInitiator) => {
+      if (pcs.current[targetSocketId]) return pcs.current[targetSocketId];
 
-        // Handle signaling
-        socket.on('webrtc_offer', async ({ from, offer }) => {
-          const pc = await createPeerConnection(from, false);
-          await pc.setRemoteDescription(new RTCSessionDescription(offer));
-          const answer = await pc.createAnswer();
-          await pc.setLocalDescription(answer);
-          socket.emit('webrtc_answer', { roomCode, answer, toSocketId: from });
-        });
+      console.log(`Creating PeerConnection for ${targetSocketId}, initiator: ${isInitiator}`);
+      const pc = new RTCPeerConnection({
+        iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+      });
 
-        socket.on('webrtc_answer', async ({ from, answer }) => {
-          const pc = pcs.current[from];
-          if (pc) {
-            await pc.setRemoteDescription(new RTCSessionDescription(answer));
-          }
-        });
-
-        socket.on('webrtc_ice', async ({ from, candidate }) => {
-          const pc = pcs.current[from];
-          if (pc) {
-            await pc.addIceCandidate(new RTCIceCandidate(candidate));
-          }
-        });
-
-        socket.on('user_left', ({ socketId }) => {
-          if (pcs.current[socketId]) {
-            pcs.current[socketId].close();
-            delete pcs.current[socketId];
-            setPeers(prev => {
-              const next = { ...prev };
-              delete next[socketId];
-              return next;
-            });
-          }
-        });
-      } catch (err) {
-        console.error('Failed to get local stream', err);
-      }
-    };
-
-    const createPeerConnection = async (targetSocketId, isOffer) => {
-      const pc = new RTCPeerConnection(pcConfig);
       pcs.current[targetSocketId] = pc;
 
-      localStream.current.getTracks().forEach(track => {
-        pc.addTrack(track, localStream.current);
-      });
+      // Add local tracks
+      const stream = localStreamRef.current;
+      if (stream) {
+        stream.getTracks().forEach(track => pc.addTrack(track, stream));
+      } else {
+        console.warn('No local stream available for PC');
+      }
 
       pc.onicecandidate = (event) => {
         if (event.candidate) {
@@ -76,30 +35,121 @@ export const useWebRTC = (socket, roomCode) => {
       };
 
       pc.ontrack = (event) => {
+        console.log(`Received remote track from ${targetSocketId}`);
         setPeers(prev => ({
           ...prev,
-          [targetSocketId]: { stream: event.streams[0] }
+          [targetSocketId]: { ...prev[targetSocketId], stream: event.streams[0] }
         }));
       };
 
-      if (isOffer) {
-        const offer = await pc.createOffer();
-        await pc.setLocalDescription(offer);
-        socket.emit('webrtc_offer', { roomCode, offer, toSocketId: targetSocketId });
+      pc.oniceconnectionstatechange = () => {
+        console.log(`ICE Connection State with ${targetSocketId}: ${pc.iceConnectionState}`);
+      };
+
+      if (isInitiator) {
+        try {
+          const offer = await pc.createOffer();
+          await pc.setLocalDescription(offer);
+          socket.emit('webrtc_offer', { roomCode, offer, toSocketId: targetSocketId });
+        } catch (err) {
+          console.error('Failed to create offer:', err);
+        }
       }
 
       return pc;
     };
 
-    initLocalStream();
+    const init = async () => {
+      try {
+        console.log('Initializing WebRTC...');
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        localStreamRef.current = stream;
+        setLocalStream(stream);
+
+        socket.on('user_joined', async ({ user, socketId, directory }) => {
+          // console.log('User joined event:', { socketId, myId: socket.id });
+
+          // If I am the one who just joined
+          if (socketId === socket.id && directory) {
+            for (const [sid, u] of Object.entries(directory)) {
+              if (sid !== socket.id) {
+                setPeers(prev => ({ ...prev, [sid]: { name: u.name } }));
+                await createPeerConnection(sid, true); // I initiate to everyone already there
+              }
+            }
+            return;
+          }
+
+          // If someone else joined, I (existing user) just wait for THEIR offer.
+          // We only add them to peers list for UI
+          setPeers(prev => ({
+            ...prev,
+            [socketId]: { ...prev[socketId], name: user?.name || 'Peer' }
+          }));
+        });
+
+        socket.on('webrtc_offer', async ({ from, offer }) => {
+          console.log('Received offer from:', from);
+          const pc = await createPeerConnection(from, false);
+          try {
+            await pc.setRemoteDescription(new RTCSessionDescription(offer));
+            const answer = await pc.createAnswer();
+            await pc.setLocalDescription(answer);
+            socket.emit('webrtc_answer', { roomCode, answer, toSocketId: from });
+          } catch (err) {
+            console.error('Error handling offer:', err);
+          }
+        });
+
+        socket.on('webrtc_answer', async ({ from, answer }) => {
+          console.log('Received answer from:', from);
+          const pc = pcs.current[from];
+          if (pc) {
+            try {
+              await pc.setRemoteDescription(new RTCSessionDescription(answer));
+            } catch (err) {
+              console.error('Error setting remote description:', err);
+            }
+          }
+        });
+
+        socket.on('webrtc_ice', async ({ from, candidate }) => {
+          const pc = pcs.current[from];
+          if (pc) {
+            try {
+              await pc.addIceCandidate(new RTCIceCandidate(candidate));
+            } catch (err) {
+              console.error('Error adding ICE candidate:', err);
+            }
+          }
+        });
+
+        socket.on('user_left', ({ socketId }) => {
+          console.log('User left:', socketId);
+          if (pcs.current[socketId]) {
+            pcs.current[socketId].close();
+            delete pcs.current[socketId];
+          }
+          setPeers(prev => {
+            const newPeers = { ...prev };
+            delete newPeers[socketId];
+            return newPeers;
+          });
+        });
+      } catch (err) {
+        console.error('WebRTC Error:', err);
+      }
+    };
+
+    init();
 
     return () => {
-      if (localStream.current) {
-        localStream.current.getTracks().forEach(track => track.stop());
-      }
+      console.log('Cleaning up WebRTC...');
       Object.values(pcs.current).forEach(pc => pc.close());
+      pcs.current = {};
+      if (localStreamRef.current) localStreamRef.current.getTracks().forEach(t => t.stop());
     };
   }, [socket, roomCode]);
 
-  return { peers, localStream: localStream.current };
+  return { peers, localStream };
 };

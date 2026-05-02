@@ -5,6 +5,7 @@ import * as z from 'zod';
 import useAuthStore from '../../store/useAuthStore';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
+import Spinner from '../ui/Spinner';
 import { useNavigate } from 'react-router-dom';
 
 const registerSchema = z.object({

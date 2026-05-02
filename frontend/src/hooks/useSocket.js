@@ -1,23 +1,28 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { io } from 'socket.io-client';
 
 const SOCKET_URL = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:4000';
 
 export const useSocket = (roomCode, user) => {
-  const socketRef = useRef();
+  const [socket, setSocket] = useState(null);
 
   useEffect(() => {
     if (!roomCode || !user) return;
 
-    socketRef.current = io(SOCKET_URL);
+    const newSocket = io(SOCKET_URL, {
+      transports: ['websocket'],
+      reconnection: true
+    });
 
-    socketRef.current.emit('join_room', { roomCode, user });
+    newSocket.on('connect', () => {
+      console.log('Socket connected:', newSocket.id);
+      setSocket(newSocket);
+    });
 
     return () => {
-      socketRef.current.emit('leave_room', { roomCode, user });
-      socketRef.current.disconnect();
+      newSocket.disconnect();
     };
   }, [roomCode, user]);
 
-  return socketRef.current;
+  return socket;
 };

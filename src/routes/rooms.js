@@ -6,5 +6,7 @@ const authController = require('../controllers/authController');
 router.post('/create', authController.requireAuth, roomsController.createRoom);
 router.post('/join', authController.requireAuth, roomsController.joinRoom);
 router.get('/', authController.requireAuth, roomsController.listRooms);
+router.get('/my-sessions', authController.requireAuth, roomsController.getMySessions);
+router.get('/:code/review', authController.requireAuth, roomsController.getRoomReview);
 
 module.exports = router;
