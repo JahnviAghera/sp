@@ -10,11 +10,8 @@ module.exports = (io, socket) => {
     if (!io.rooms_data) io.rooms_data = {};
     if (!io.rooms_data[roomCode]) {
       const room = await Room.findOne({ code: roomCode }).populate('moderator');
-      const moderatorKey = room?.moderator?.geminiApiKey;
-      const { topic } = await aiService.generateTopic({ seed: room?.topic || 'Professional Skills', userApiKey: moderatorKey });
-      
-      let sessionId = null;
-      if (room) {
+      const topic = room?.title || 'General Discussion';
+      const sessionId = room?._id;
         try {
           const session = await Session.create({
             room: room._id,
