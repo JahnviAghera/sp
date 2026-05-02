@@ -72,6 +72,24 @@ exports.updateProfile = async (req, res) => {
 };
 
 // Google OAuth callback handler — passport sets req.user
+exports.testApiKey = async (req, res) => {
+  const { apiKey } = req.body;
+  if (!apiKey) return res.status(400).json({ message: 'API Key is required' });
+  
+  try {
+    const { GoogleGenerativeAI } = require('@google/generative-ai');
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const result = await model.generateContent("Reply with 'OK' if this works.");
+    if (result.response.text()) {
+      return res.json({ success: true, message: 'API Key is valid!' });
+    }
+    return res.status(400).json({ message: 'Invalid API Key' });
+  } catch (err) {
+    return res.status(400).json({ message: 'Invalid API Key or connection failed' });
+  }
+};
+
 exports.googleCallback = async (req, res) => {
   try {
     const user = req.user; // from passport

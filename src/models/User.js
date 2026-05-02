@@ -12,6 +12,7 @@ const UserSchema = new mongoose.Schema({
     totalSpeakingTime: { type: Number, default: 0 },
     sessionsParticipated: { type: Number, default: 0 }
   },
+  geminiApiKey: { type: String, default: null },
   createdAt: { type: Date, default: Date.now }
 });
 
