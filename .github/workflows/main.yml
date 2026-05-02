@@ -54,7 +54,12 @@ jobs:
         key: ${{ secrets.EC2_SSH_KEY }}
         script: |
           cd speakspace || cd temp_repo
+          # Fix git conflict with local .env
+          git checkout .env || true
           git pull origin main
+          # Free up disk space (Critical for Free Tier)
+          sudo docker system prune -af --volumes
+          # Launch
           if command -v docker-compose &> /dev/null; then
             sudo docker-compose up --build -d
           else
