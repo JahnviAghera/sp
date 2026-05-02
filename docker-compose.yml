@@ -11,8 +11,8 @@ services:
 
   backend:
     build: .
-    ports:
-      - "4000:4000"
+    expose:
+      - "4000"
     environment:
       - NODE_ENV=production
       - MONGO_URI=mongodb://mongodb:27017/speakspace
@@ -22,16 +22,21 @@ services:
     depends_on:
       - mongodb
     restart: always
+    deploy:
+      replicas: 2  # 2 backend instances for load balancing
 
+  # Load Balancer (Nginx) + Frontend Static Server
   frontend:
     build: ./frontend
     ports:
       - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
     depends_on:
       - backend
     restart: always
 
-  # Monitoring System (Category 10: Advanced Ops)
+  # Real-time Monitoring Dashboard
   monitoring:
     image: amir20/dozzle:latest
     ports:
@@ -46,4 +51,3 @@ volumes:
 networks:
   default:
     name: speakspace-network
-

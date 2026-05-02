@@ -9,10 +9,13 @@ RUN npm install --no-cache && npm cache clean --force
 COPY . .
 RUN npm run build
 
-# Stage 2: Serve with Nginx (tiny, no Node.js)
+# Stage 2: Nginx serves frontend AND acts as Load Balancer for API
 FROM nginx:alpine
 
+# Copy built frontend
 COPY --from=build /app/dist /usr/share/nginx/html
+
+# Note: nginx.conf is mounted via docker-compose volume for the load balancer config
 
 EXPOSE 80
 
