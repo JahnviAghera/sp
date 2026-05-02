@@ -56,11 +56,12 @@ export default function SessionReport() {
   }
 
   if (error) {
+    const isEmptyRoom = error.includes('No transcripts found');
     return (
       <div className="flex-grow flex flex-col items-center justify-center min-h-[60vh] p-8">
         <div className="p-8 bg-red-500/10 border border-red-500/30 rounded-3xl max-w-md text-center">
-          <h2 className="text-xl font-bold text-red-400 mb-4">Report Unavailable</h2>
-          <p className="text-red-300/80 mb-6">{error}</p>
+          <h2 className="text-xl font-bold text-red-400 mb-4">{isEmptyRoom ? "No Discussion Recorded" : "Report Unavailable"}</h2>
+          <p className="text-red-300/80 mb-6">{isEmptyRoom ? "It looks like nobody spoke during this session, so there are no transcripts for the AI to analyze." : error}</p>
           <button onClick={() => navigate('/dashboard')} className="px-6 py-3 bg-white/5 hover:bg-white/10 text-white rounded-xl font-bold transition-all">
             Return to Dashboard
           </button>
