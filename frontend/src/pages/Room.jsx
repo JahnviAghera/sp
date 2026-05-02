@@ -289,7 +289,7 @@ export default function Room() {
                 isSpeaking={!isMuted && currentSpeaker?.userId === effectiveUser.id}
                 isMuted={isMuted}
                 isLocal={true}
-                isModerator={isModerator}
+                isModerator={roomInfo.moderatorId === effectiveUser.id}
               />
 
               {Object.entries(directory)
@@ -300,9 +300,10 @@ export default function Room() {
                     name={dirUser.name || `User_${id.substr(0, 4)}`}
                     isSpeaking={currentSpeaker?.socketId === id}
                     isMuted={!!muteStates[id]}
+                    isModerator={roomInfo.moderatorId === dirUser.id}
                     connectionState={peers[id]?.connectionState}
                     stream={peers[id]?.stream}
-                    showControls={isModerator}
+                    showControls={isModerator} // I am the moderator, so I see controls
                     onMute={() => muteParticipant(id)}
                     onKick={() => kickParticipant(id)}
                   />
@@ -455,15 +456,25 @@ function ParticipantCard({ name, isSpeaking, isMuted, stream, isLocal, showContr
       </div>
 
       <div className="mt-6 text-center z-10">
-        <p className="text-sm font-black text-white tracking-tight">{name}</p>
-        <div className="flex items-center justify-center gap-2 mt-1">
+        <div className="flex items-center justify-center gap-2">
+          <p className={`text-base font-black tracking-tight ${isSpeaking ? 'text-brand-400' : 'text-white'}`}>{name}</p>
+          {isModerator && (
+            <div className="bg-yellow-500/20 p-1 rounded-md">
+              <Shield size={12} className="text-yellow-400" />
+            </div>
+          )}
+        </div>
+        <div className="flex items-center justify-center gap-2 mt-2">
           {isMuted ? (
-            <div className="flex items-center gap-1 text-red-500">
-              <MicOff size={12} />
-              <span className="text-[10px] font-bold uppercase tracking-widest">Muted</span>
+            <div className="flex items-center gap-1.5 px-2.5 py-1 bg-red-500/10 border border-red-500/20 rounded-full text-red-500">
+              <MicOff size={10} strokeWidth={3} />
+              <span className="text-[10px] font-black uppercase tracking-[0.1em]">Muted</span>
             </div>
           ) : (
-            <span className="text-[10px] font-bold text-slate-600 uppercase tracking-widest">{isSpeaking ? 'Speaking...' : 'Listening'}</span>
+            <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full ${isSpeaking ? 'bg-brand-500/20 border border-brand-500/30 text-brand-400' : 'bg-slate-800/50 border border-white/5 text-slate-500'}`}>
+              <div className={`w-1.5 h-1.5 rounded-full ${isSpeaking ? 'bg-brand-500 animate-pulse' : 'bg-slate-600'}`} />
+              <span className="text-[10px] font-black uppercase tracking-[0.1em]">{isSpeaking ? 'Speaking' : 'Listening'}</span>
+            </div>
           )}
         </div>
       </div>
