@@ -62,6 +62,14 @@ export const useWebRTC = (socket, roomCode) => {
     const init = async () => {
       try {
         console.log('Initializing WebRTC...');
+        
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+          const errorMsg = 'Microphone access is blocked. Modern browsers require HTTPS (Secure Context) to access the microphone on remote IPs. Use localhost or enable the Chrome flag: chrome://flags/#unsafely-treat-insecure-origin-as-secure';
+          console.error(errorMsg);
+          alert(errorMsg);
+          return;
+        }
+
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         localStreamRef.current = stream;
         setLocalStream(stream);

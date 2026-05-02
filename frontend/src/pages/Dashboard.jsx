@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Users, Plus, Hash, Calendar, Clock, ChevronRight, Activity, TrendingUp } from 'lucide-react';
-import { roomAPI } from '../services/api';
+import api from '../services/api';
 import useAuthStore from '../store/useAuthStore';
 import useRoomStore from '../store/useRoomStore';
-import axios from 'axios';
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -20,11 +19,11 @@ export default function Dashboard() {
     const fetchDashboardData = async () => {
       try {
         const [schedResp, sessResp] = await Promise.all([
-          axios.get('/api/schedules/upcoming'),
-          axios.get('/api/rooms/my-sessions')
+          api.get('/schedules/upcoming'),
+          api.get('/rooms/my-sessions')
         ]);
-        setSchedules(schedResp.data.schedules);
-        setPastSessions(sessResp.data.sessions);
+        setSchedules(schedResp.data.schedules || []);
+        setPastSessions(sessResp.data.sessions || []);
       } catch (err) {
         console.error('Failed to fetch dashboard data', err);
       }

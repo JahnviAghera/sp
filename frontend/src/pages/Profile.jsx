@@ -25,14 +25,6 @@ export default function Profile() {
         });
       } catch (err) {
         console.error('Failed to fetch profile', err);
-        // Mock data fallback
-        setProfile({
-          name: storeUser?.name || 'Demo User',
-          email: storeUser?.email || 'demo@example.com',
-          bio: 'Passionate about communication and AI.',
-          skills: ['Public Speaking', 'Technical Writing'],
-          stats: { totalSpeakingTime: 1240, sessionsParticipated: 5 }
-        });
       } finally {
         setLoading(false);
       }
@@ -57,6 +49,7 @@ export default function Profile() {
   };
 
   if (loading) return <div className="p-20 text-center text-gray-500">Loading profile...</div>;
+  if (!profile) return <div className="p-20 text-center text-gray-500">Could not load profile. Please try again.</div>;
 
   return (
     <div className="max-w-4xl mx-auto w-full mt-10 p-6 text-white">
@@ -154,11 +147,26 @@ export default function Profile() {
 
           <div className="bg-dark-800 p-8 rounded-3xl border border-dark-700">
             <h3 className="text-xl font-bold mb-6">Recent Session History</h3>
-            <div className="space-y-4">
-              <HistoryItem title="Group Discussion: Future of Work" date="Oct 24, 2023" score="8.4" />
-              <HistoryItem title="Mock Interview: Senior FE Developer" date="Oct 20, 2023" score="9.1" />
-              <HistoryItem title="Topic Exploration: AI Ethics" date="Oct 15, 2023" score="7.8" />
-            </div>
+            {(profile.recentSessions || []).length > 0 ? (
+              <div className="space-y-4">
+                {profile.recentSessions.map((s, i) => (
+                  <div key={i} className="flex items-center justify-between p-4 bg-dark-900 rounded-2xl border border-dark-700 hover:border-brand-500/30 transition-colors">
+                    <div>
+                      <h4 className="font-bold text-sm">{s.title}</h4>
+                      <p className="text-[10px] text-gray-500">{new Date(s.date).toLocaleDateString()}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs font-bold text-brand-500">Score: {s.score}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-10 border border-dashed border-white/10 rounded-2xl">
+                <p className="text-slate-500 text-sm">No sessions completed yet.</p>
+                <a href="/rooms/new" className="text-brand-500 text-xs font-bold hover:underline mt-2 inline-block">Join your first session →</a>
+              </div>
+            )}
           </div>
         </div>
       </div>
