@@ -389,6 +389,7 @@ function MetricCard({ label, val, color }) {
 
 function PermissionOverlay({ status, onRetry }) {
   const isSecure = window.location.protocol === 'https:' || window.location.hostname === 'localhost';
+  const isFirefox = navigator.userAgent.toLowerCase().includes('firefox');
 
   return (
     <div className="absolute inset-0 z-[100] flex items-center justify-center bg-bg-primary/95 backdrop-blur-xl animate-in fade-in duration-500">
@@ -400,12 +401,31 @@ function PermissionOverlay({ status, onRetry }) {
           <h2 className="text-2xl font-black text-white mb-3">Microphone Access Required</h2>
           <p className="text-slate-400 leading-relaxed">Please allow microphone access to participate in the real-time discussion and receive AI feedback.</p>
         </div>
+        
         {!isSecure && (
-          <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-2xl text-left">
-            <p className="text-xs font-bold text-red-500 uppercase mb-2 flex items-center gap-2"><Shield size={14} /> Insecure Connection</p>
-            <p className="text-[10px] text-red-400/80 leading-relaxed">Browsers block microphones on non-HTTPS sites. Use localhost or enable the Chrome flag: <code className="block mt-2 p-2 bg-black/30 rounded font-mono text-[9px] break-all whitespace-pre-wrap">chrome://flags/#unsafely-treat-insecure-origin-as-secure</code></p>
+          <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-2xl text-left space-y-3">
+            <p className="text-xs font-bold text-red-500 uppercase flex items-center gap-2"><Shield size={14} /> Insecure Connection Detected</p>
+            
+            {isFirefox ? (
+              <div className="text-[10px] text-red-400/80 leading-relaxed">
+                <p className="font-bold mb-1">Firefox Instructions:</p>
+                <ol className="list-decimal ml-4 space-y-1">
+                  <li>Go to <b>about:config</b></li>
+                  <li>Set <b>media.devices.insecure.enabled</b> to <b>true</b></li>
+                  <li>Set <b>media.getusermedia.insecure.enabled</b> to <b>true</b></li>
+                </ol>
+              </div>
+            ) : (
+              <div className="text-[10px] text-red-400/80 leading-relaxed">
+                <p className="font-bold mb-1">Chrome/Edge Instructions:</p>
+                <p>Enable the flag at:</p>
+                <code className="block mt-1 p-2 bg-black/30 rounded font-mono text-[9px] break-all whitespace-pre-wrap">chrome://flags/#unsafely-treat-insecure-origin-as-secure</code>
+                <p className="mt-2 italic">Safari does not support mic access on insecure remote IPs.</p>
+              </div>
+            )}
           </div>
         )}
+        
         <button onClick={onRetry} className="w-full py-4 bg-brand-500 hover:bg-brand-600 text-white rounded-2xl font-black transition-all shadow-xl shadow-brand-500/20 active:scale-95">{status === 'denied' ? 'Try Again' : 'Allow Microphone'}</button>
         <p className="text-[10px] text-slate-600 font-bold uppercase tracking-widest">Check your browser address bar for the prompt</p>
       </div>
