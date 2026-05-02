@@ -1,20 +1,18 @@
 # Stage 1: Build
-FROM node:18-alpine as build
+FROM node:20-alpine as build
 
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm install
+RUN npm install --no-cache
 
 COPY . .
 RUN npm run build
 
-# Stage 2: Serve
+# Stage 2: Serve with Nginx (tiny image, no Node.js overhead)
 FROM nginx:alpine
 
 COPY --from=build /app/dist /usr/share/nginx/html
-# Copy custom nginx config if needed
-# COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 80
 
