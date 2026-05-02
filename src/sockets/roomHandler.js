@@ -13,15 +13,16 @@ module.exports = (io, socket) => {
       const topic = room?.title || 'General Discussion';
       const sessionId = room?._id;
         try {
-          const session = await Session.create({
-            room: room._id,
-            startedAt: Date.now()
-          });
-          sessionId = session._id;
+          if (room) {
+            const session = await Session.create({
+              room: room._id,
+              startedAt: Date.now()
+            });
+            sessionId = session._id;
+          }
         } catch (err) {
           console.error('Failed to create session:', err);
         }
-      }
 
       io.rooms_data[roomCode] = { 
         queue: [], 
