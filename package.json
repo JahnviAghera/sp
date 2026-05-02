@@ -7,7 +7,10 @@
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
     "frontend": "cd frontend && npm run dev",
-    "dev:full": "concurrently \"npm run dev\" \"npm run frontend\""
+    "dev:full": "concurrently \"npm run dev\" \"npm run frontend\"",
+    "test": "jest --config jest.config.json --testPathPattern=tests/",
+    "test:watch": "jest --config jest.config.json --testPathPattern=tests/ --watch",
+    "test:coverage": "jest --config jest.config.json --testPathPattern=tests/ --coverage"
   },
   "engines": {
     "node": ">=18"

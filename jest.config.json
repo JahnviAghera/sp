@@ -1,0 +1,11 @@
+{
+  "testEnvironment": "node",
+  "testTimeout": 30000,
+  "forceExit": true,
+  "detectOpenHandles": true,
+  "coverageDirectory": "coverage",
+  "collectCoverageFrom": [
+    "src/**/*.js",
+    "!src/index.js"
+  ]
+}
