@@ -56,12 +56,16 @@ async function generateSessionReview(transcripts) {
     });
     
     const script = transcripts.map(t => `[${t.userName}]: ${t.text}`).join('\n');
-    const prompt = `Review this transcript and return strictly a JSON summary including sessionSummary, overallVibe, and an array of participants with scores and feedback. Transcript: ${script}`;
-    
     const result = await model.generateContent(prompt);
     let text = result.response.text();
-    // Strip markdown formatting if Gemini included it
-    text = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+    
+    // Most robust way to extract JSON: find the first { and last }
+    const firstBrace = text.indexOf('{');
+    const lastBrace = text.lastIndexOf('}');
+    if (firstBrace !== -1 && lastBrace !== -1) {
+      text = text.substring(firstBrace, lastBrace + 1);
+    }
+    
     return JSON.parse(text);
   } catch (err) {
     console.error('Gemini generateSessionReview error:', err);
