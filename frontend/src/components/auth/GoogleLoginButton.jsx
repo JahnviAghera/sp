@@ -4,7 +4,7 @@ import useAuthStore from '../../store/useAuthStore';
 
 const GoogleLoginButton = () => {
   const handleGoogleLogin = () => {
-    window.location.href = 'http://localhost:4000/api/auth/google';
+    window.location.href = '/api/auth/google';
   };
 
   return (
